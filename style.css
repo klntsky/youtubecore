@@ -1,0 +1,21 @@
+.button {
+    cursor: pointer;
+    padding: 10px 20px;
+    color: white;
+    border-radius: 2px;
+    margin: 15px 5px;
+    background-color: #66F;
+    display: inline-block;
+    user-select: none;
+}
+
+.button-small {
+    padding: 10px 10px;
+    color: white;
+    border-radius: 2px;
+    margin: 15px 5px;
+    cursor: pointer;
+    background-color: #F67;
+    display: inline-block;
+    user-select: none;
+}
