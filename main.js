@@ -38,14 +38,18 @@ function stopVideo() {
 function parseHash () {
     if (!document.location.hash || document.location.hash == '#')
         return [];
-    const res = document.location.hash.substr(1).split(',').map(video => video.split('.'));
-    if (res.every(el => el.length == 2))
+    const res = document.location.hash.substr(1).split(',').map(
+        (video, ix) => [ix, ...video.split('.')]
+    );
+    if (res.every(el => el.length == 3))
         return res;
     else
         throw "Invalid format!";
 }
 
-const players = {};
+const model = { players: {}, count: 0 };
+
+const players = model.players;
 
 function createPlayer(ix, videoId, volume) {
     const divId = videoId;
@@ -75,8 +79,18 @@ function createPlayer(ix, videoId, volume) {
 }
 
 function putPlayers (videos) {
-    videos.forEach(([videoId, volume], ix) =>
-                   createPlayer(ix, videoId, volume));
+    videos.forEach(([ix, videoId, volume]) => {
+        if (players[ix]) {
+            // TODO: exact check?
+            if (players[ix].getVideoUrl().includes(videoId)) {
+                // no-op
+            } else {
+                players[ix].loadVideoById(videoId);
+            }
+        } else {
+            createPlayer(ix, videoId, volume);
+        }
+    });
 }
 
 const addField = (ix, videoId, volume) => {
@@ -85,6 +99,9 @@ const addField = (ix, videoId, volume) => {
     linkInput.style = 'width: 500px;';
     linkInput.className = 'link';
     linkInput.value = 'https://www.youtube.com/watch?v=' + videoId;
+    linkInput.addEventListener('change', () => {
+        applyChanges();
+    });
 
     const volumeInput = document.createElement('input');
     volumeInput.type = 'range';
@@ -93,7 +110,11 @@ const addField = (ix, videoId, volume) => {
     volumeInput.max = 100;
     volumeInput.step = 1;
     volumeInput.value = volume;
-    volumeInput.addEventListener('change', () => players[ix].setVolume(volumeInput.value));
+    volumeInput.addEventListener('change', () => {
+        players[ix].setVolume(volumeInput.value);
+        applyChanges();
+    });
+    volumeInput.addEventListener('mousemove', () => players[ix].setVolume(volumeInput.value));
 
     const delInput = document.createElement('span');
     delInput.className = "button-small del-button";
@@ -104,12 +125,19 @@ const addField = (ix, videoId, volume) => {
     row.appendChild(volumeInput);
     row.appendChild(delInput);
     row.className = 'entry';
-    delInput.addEventListener('click', _ => row.remove());
+    row.id = ix;
+    delInput.addEventListener('click', _ => {
+        row.remove();
+        players[ix].destroy();
+        players[ix] = undefined;
+        document.getElementById(ix.toString()).remove();
+        applyChanges();
+    });
     document.querySelector('#fields').appendChild(row);
 };
 
 function putFields (videos) {
-    videos.forEach(([videoId, volume], ix) => {
+    videos.forEach(([ix, videoId, volume]) => {
         addField(ix, videoId, volume);
     });
 }
@@ -130,36 +158,41 @@ function getDataFromFields() {
             linkEl.style.borderColor = 'unset';
         }
         const volume = entry.getElementsByClassName('volume')[0].value;
-        res.push([parseId(link), parseInt(volume)]);
+        res.push([parseInt(entry.id), parseId(link), parseInt(volume)]);
     }
     return res;
 };
 
 function getHashForVideos (videos) {
-    return videos.map(pair => pair.join('.')).join(',');
+    return videos.map(([_, videoId, volume]) => videoId + '.' + volume).join(',');
 }
 
 function applyChanges () {
     const videos = getDataFromFields();
     const link = document.location.protocol + '//' + document.location.host + '#' + getHashForVideos(videos);
-    document.location.href = link;
-    // document.location.reload();
+    putPlayers(videos);
+    document.location.replace(link);
+    document.getElementById('mix-link').href = link;
+    const updatedHandle = document.getElementById('updated-handle');
+    updatedHandle.style.display = 'inline';
+    setTimeout(() => updatedHandle.style.display = 'none', 1000);
+
 }
 
 function setHandlers () {
     document.querySelector('#add-field').addEventListener('click', () => {
-        addField(document.querySelectorAll('.entry').length, '', 100);
-    });
-    document.querySelector('#apply-changes').addEventListener('click', () => {
-        applyChanges();
+        addField(model.count, '', 100);
+        model.count++;
     });
 }
 
 function init () {
     const videos = parseHash();
+    model.count = videos.length;
     putPlayers(videos);
     putFields(videos);
     setHandlers();
+    document.getElementById('mix-link').href = document.location.href;
 }
 
 // 2. This code loads the IFrame Player API code asynchronously.
