@@ -159,6 +159,11 @@ function createPlayer(ix, videoId, volume) {
                 model.readyCount++;
                 player.setVolume(volume);
                 player.setLoop(true);
+            },
+            'onStateChange': event => {
+                if (event.data == YT.PlayerState.ENDED) {
+                    player.playVideo(0);
+                }
             }
         }
     });
@@ -280,7 +285,7 @@ async function loadVideoTitles () {
         }
     }
     } catch (e) {
-        console.log('e', e);
+        console.log('error:', e);
     }
 }
 
@@ -378,7 +383,6 @@ const loadVideoTitle = memoize(async (videoId) => {
     const url = 'https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=' + videoId + '&key=' + APIKey;
     const response = await fetch(url);
     const json = await response.json();
-    console.log(videoId, json);
     return json.items[0].snippet.title;
 });
 
