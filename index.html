@@ -12,11 +12,30 @@
   <body>
     <h2>YouTubeCore player</h2>
 
+    <p>
+      This is a mixer for embedded YouTube players.<br>
+
+      Compose new sound by mixing existing youtube videos and share your experiences via a link.<br>
+
+      Example works:
+
+      <a target="_blank" href="https://youtubecore.sigil.network/#rHvYpks9AWU.100,5TOR7ZMIug4.49,U7ca5vIBju4.31,tTCSfx47R1w.12,ukZYP5Dy43E.13,q9J_ufJzo1c.51">#1</a>
+      <a target="_blank" href="https://youtubecore.sigil.network/#8l6kl6RmHVc.100,7SENQg05GN0.100,O6dFBJqI09o.100,9LWaoLUSKAE.23,q9J_ufJzo1c.100,VIpHRaAS_W8.59">#2</a>
+      <a target="_blank" href="https://youtubecore.sigil.network/#QClWIvcUpaE.100,MCuEwqrxrYU.100,ukZYP5Dy43E.68,QClWIvcUpaE.100,QClWIvcUpaE.100,MCuEwqrxrYU.100">#3</a>
+
+
+
+
+    </p>
+
     <div id="controls"></div>
-    <h3>Play</h3>
+    <h3>Player
+      <span id="play-button">▶</span>
+      <span id="pause-button">⏸</span>
+    </h3>
+
 
     <p>
-
       Allow media autoplay in the browser for convenience.
     </p>
     <br>
@@ -26,8 +45,9 @@
 
     <p>
       Link format is: <b>https://www.youtube.com/watch?v=ID</b><br>
-      Press "APPLY CHANGES" to update URL. Reload the page to actually update.<br>
-      Switch to lower quality to save bandwidth.
+      Switch to lower quality to save bandwidth.<br>
+      The link updates when parameters are changed (if video URLs are valid).<br>
+      Save intermediate versions by making bookmarks in your browser.
     </p>
 
     <div id="fields"></div>

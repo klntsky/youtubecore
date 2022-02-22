@@ -23,3 +23,41 @@
     display: inline-block;
     user-select: none;
 }
+
+#play-button {
+    cursor: pointer;
+    color: green;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#play-button:hover {
+    background-color: rgba(0,0,200,0.1);
+}
+
+#pause-button {
+    cursor: pointer;
+    color: green;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#pause-button:hover {
+    background-color: rgba(0,0,200,0.1);
+}
+
+.video-title {
+    display: block;
+    font-size: 14px;
+    margin-top: ;
+    margin-top: -21px;
+    max-width: 900px;
+    word-wrap: break-word;
+    max-height: 21px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-break: nob;
+    font-style: italic;
+}
