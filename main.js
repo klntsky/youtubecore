@@ -234,9 +234,6 @@ function putFields (videos) {
     });
 }
 
-// const parseId = link =>
-//       link.split('=')[1] || '';
-
 const parseId = link =>
       link.match(/v=.{11}/g)[0].substr(2);
 
