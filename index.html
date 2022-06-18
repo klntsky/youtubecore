@@ -2,64 +2,47 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <script>
+    <title>PureScript livecoding</title>
+    <style>
 
+      /* .mixer-video-title { */
+      /*     font-size: 12px; */
+      /*     text-overflow: ellipsis; */
+      /*     overflow: hidden; */
+      /* } */
+      /* .mixer-video-input-container { */
+      /*     display: -webkit-flex; */
+      /*     display: -moz-flex; */
+      /*     display: flex; */
 
-    </script>
-    <script src="./main.js"></script>
+      /* } */
+      /* .video-container { */
+      /*     display: inline-block; */
+      /* } */
+      /* #play-button { */
+      /*     cursor: pointer; */
+      /*     border: 1px solid rgba(0,0,0,0.1); */
+      /*     padding: 10px; */
+      /*     border-radius: 5px; */
+      /* } */
+
+      /* #pause-button { */
+      /*     cursor: pointer; */
+      /*     border: 1px solid rgba(0,0,0,0.1); */
+      /*     padding: 10px; */
+      /*     border-radius: 5px; */
+      /* } */
+
+      /* #pause-button:hover { */
+      /*     background-color: rgba(0,0,200,0.1); */
+      /* } */
+    </style>
     <link rel="stylesheet" href="./style.css">
   </head>
   <body>
-    <h2>YouTubeCore player</h2>
+    <script src="./index.js"></script>
+    <script>
 
-    <p>
-      This is a mixer for embedded YouTube players.<br>
-
-      Compose new sound by mixing existing youtube videos and share your experiences via a link.<br>
-
-      Example works:
-
-      <a target="_blank" href="https://youtubecore.sigil.network/#rHvYpks9AWU.100,5TOR7ZMIug4.49,U7ca5vIBju4.31,tTCSfx47R1w.12,ukZYP5Dy43E.13,q9J_ufJzo1c.51">#1</a>
-      <a target="_blank" href="https://youtubecore.sigil.network/#8l6kl6RmHVc.100,7SENQg05GN0.100,O6dFBJqI09o.100,9LWaoLUSKAE.23,q9J_ufJzo1c.100,VIpHRaAS_W8.59">#2</a>
-      <a target="_blank" href="https://youtubecore.sigil.network/#QClWIvcUpaE.100,MCuEwqrxrYU.100,ukZYP5Dy43E.68,QClWIvcUpaE.100,QClWIvcUpaE.100,MCuEwqrxrYU.100">#3</a>
-
-
-
-
-    </p>
-
-    <div id="controls"></div>
-    <h3>Player
-      <span id="play-button">▶</span>
-      <span id="pause-button">⏸</span>
-    </h3>
-
-
-    <p>
-      Allow media autoplay in the browser for convenience.
-    </p>
-    <br>
-    <div id="players"></div>
-
-    <h3>Edit/Create</h3>
-
-    <p>
-      Link format is: <b>https://www.youtube.com/watch?v=ID</b><br>
-      Switch to lower quality to save bandwidth.<br>
-      The link updates when parameters are changed (if video URLs are valid).<br>
-      Save intermediate versions by making bookmarks in your browser.
-    </p>
-
-    <div id="fields"></div>
-    <div id="add-field" class="button">
-      ADD VIDEO
-    </div>
-    <a id="mix-link">
-      LINK TO THIS MIX
-    </a>
-    <span id="updated-handle" style="display:none">[updated]</span>
-    <div id="credits">
-      Proof of concept made by <a href="https://t.me/little_pieces" target="_blank">@klntsky</a>.
-    </div>
+    </script>
   </body>
 </html>

@@ -1,3 +1,134 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#header {
+    background-color: #262626;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    height: 50px;
+    width: 100%;
+    margin: 0px;
+    display: block;
+    outline: none;
+    vertical-align: middle;
+    line-height: 50px;
+}
+
+#header-title {
+    font-size: 26px;
+    font-weight: bold;
+    margin: 14px;
+    font-family: Roboto, Arial, sans-serif;
+}
+
+.player-button {
+    cursor: pointer;
+    vertical-align: top;
+    background-color: rgb(62, 166, 255);
+    color: #262626;
+    border-radius: 2px;
+    padding: 10px 12px;
+    margin: 6px;
+    margin-bottom: 10px;
+    font-family: Roboto, Arial, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.mixer-entry-interval {
+    height: 8px;
+}
+
+.controller-title {
+    font-size: 10px;
+    font-weight: bold;
+    font-family: Roboto, Arial, sans-serif;
+    font-weight: 500;
+    width: 30px;
+    padding-right: 3px;
+}
+
+.delete-button {
+    cursor: pointer;
+    background-color: rgb(200, 40, 40);
+    color: #262626;
+    border-radius: 2px;
+    padding: 9px 12px;
+    margin: 6px;
+    margin-bottom: 10px;
+    font-family: Roboto, Arial, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+#add-video-button-container {
+    margin-top: 20px;
+}
+
+#videos-container {
+    display: flex;
+}
+
+.add-video-button {
+    cursor: pointer;
+    background-color: rgb(62, 166, 255);
+    color: #262626;
+    border-radius: 2px;
+    padding: 10px 12px;
+    margin: 6px;
+    margin-bottom: 10px;
+    font-family: Roboto, Arial, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.mixer-video-title {
+    font-size: 16px;
+    padding: 3px;
+    margin-top: 2px;
+}
+
+.video-link {
+    color: #CCC;
+    text-decoration: none;
+}
+
+.mixer-video-input {
+    background-color: #111;
+    color: white;
+    font-size: 16px;
+    width: 120px;
+    padding: 0px 10px;
+    border: 1px rgba(255, 255, 255, 0.1);
+    outline: none;
+    height: 35px;
+}
+
+#mixer {
+    margin: 5px 20px;
+}
+
+.mixer-video-input:focus {
+    outline: 1px solid  rgb(62, 166, 255);
+
+}
+
+input[type='range'] {
+    -webkit-appearance: none !important;
+    background: #333;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    height:7px;
+}
+input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    background: #999;
+    height: 14px;
+    width: 14px;
+    border-radius: 10px;
+}
+
+
 #updated-handle {
     color: #090;
 }
@@ -24,30 +155,6 @@
     user-select: none;
 }
 
-#play-button {
-    cursor: pointer;
-    color: green;
-    border: 1px solid rgba(0,0,0,0.1);
-    padding: 10px;
-    border-radius: 5px;
-}
-
-#play-button:hover {
-    background-color: rgba(0,0,200,0.1);
-}
-
-#pause-button {
-    cursor: pointer;
-    color: green;
-    border: 1px solid rgba(0,0,0,0.1);
-    padding: 10px;
-    border-radius: 5px;
-}
-
-#pause-button:hover {
-    background-color: rgba(0,0,200,0.1);
-}
-
 .video-title {
     display: block;
     font-size: 14px;
@@ -60,4 +167,72 @@
     overflow: hidden;
     word-break: nob;
     font-style: italic;
+}
+
+#flex-container {
+    display: flex;
+}
+
+#mixer {
+    flex: 0 0 750px;
+}
+
+.recorder-start {
+}
+
+.recorder-ready-to-record {
+    animation: blink-animation 1s steps(5, start) infinite;
+}
+
+.slider-input {
+    width: 140px;
+}
+
+.slider-input-container {
+    min-width: 240px;
+}
+
+.recorder-recording {
+    color: red;
+}
+
+@keyframes blink-animation {
+    from {
+        color: black;
+    }
+    to {
+        color: red;
+    }
+}
+
+
+.playback-button, .recorder {
+    cursor: pointer;
+    background-color: rgb(62, 166, 255);
+    color: #262626;
+    border-radius: 2px;
+    padding: 2px 2px;
+    margin: 3px;
+    line-height: 17px;
+    display: inline-block;
+    text-align: center;
+    font-family: Roboto, Arial, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    width: 14px;
+    height: 16px;
+}
+
+.video-container {
+    position: fixed;
+}
+
+body {
+    color: #CCC;
+    background-color: #222;
+}
+a {
+    color: #FFF;
+    font-weight: bold;
+    text-decoration: underline;
 }
