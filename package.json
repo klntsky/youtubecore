@@ -1,0 +1,17 @@
+{
+  "name": "youtubecore-player",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "spago bundle-app -m Main --to index.js"
+  },
+  "author": "klntsky",
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "^0.14.39"
+  }
+}
