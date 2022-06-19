@@ -1,0 +1,32 @@
+name: Build and Deploy
+on:
+  push:
+    branches:
+      - master
+permissions: 
+  contents: write
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install and Build
+        run: |
+          export PURS_VERSION="0.14.5"
+          echo "PureScript version: $PURS_VERSION"
+          wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/$PURS_VERSION/linux64.tar.gz
+          tar -xvf $HOME/purescript.tar.gz -C $HOME/
+          chmod a+x $HOME/purescript
+          npm install -g spago
+          npm run build
+          mkdir build
+          cp index.js index.html style.css build/
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          branch: gh-pages 
+          folder: build
