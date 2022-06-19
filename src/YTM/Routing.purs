@@ -19,14 +19,14 @@ import Data.NonEmpty (NonEmpty(..), fromNonEmpty)
 import Text.Parsing.StringParser (Parser, fail, runParser, try)
 import Text.Parsing.StringParser.CodePoints (char, regex)
 import Text.Parsing.StringParser.Combinators (many1, optionMaybe, sepBy)
-import YTM.Types (Recording, Route, VideoParams, Volume, RecordingEntry)
+import YTM.Types (Recording, RecordingEntry, Route, VideoParams, Volume, Opacity)
 import YTM.VideoId (id)
 
 stringify :: Route -> String
 stringify route = intercalate "," (stringifyVideoParams <$> route)
 
 stringifyVideoParams :: VideoParams -> String
-stringifyVideoParams { videoId, settings } =
+stringifyVideoParams { videoId, settings, opacity } =
   unwrap videoId <>
   (
     fold $ settings <#> \entry ->
@@ -34,7 +34,8 @@ stringifyVideoParams { videoId, settings } =
      show entry.volume <> "*" <> show entry.amplitude <>
      (fromMaybe "" $ stringifyRecording <$> entry.recording) <>
      "]"
-  )
+  ) <>
+  "*" <> show opacity
 
 stringifyRecording :: Recording -> String
 stringifyRecording recording =
@@ -65,19 +66,24 @@ legacyRouteParser = do
       videoId <- id
       void $ char '.'
       volume <- parseVolume
-      pure { videoId, settings:
-                      NEA.fromNonEmpty $
-                      NonEmpty { volume, recording: Nothing, amplitude: 100 }
-                      [ { volume: 50, recording: Nothing, amplitude: 100 }
-                      , { volume: 50, recording: Nothing, amplitude: 100 }
-                      ]
+      pure { videoId
+           , settings:
+             NEA.fromNonEmpty $
+             NonEmpty { volume, recording: Nothing, amplitude: 100 }
+             [ { volume: 50, recording: Nothing, amplitude: 100 }
+             , { volume: 50, recording: Nothing, amplitude: 100 }
+             ]
+           , opacity: 100
            }
 
 parseVideoParams :: Parser VideoParams
 parseVideoParams = do
   videoId <- id
   settings <- parseSettings
-  pure { videoId, settings }
+  opacity <- fromMaybe 100 <$> optionMaybe do
+    void $ char '*'
+    parseOpacity
+  pure { videoId, settings, opacity }
 
 parseSettings
   :: Parser (NonEmptyArray { volume :: Volume, recording :: Maybe Recording, amplitude :: Int })
@@ -99,6 +105,9 @@ parseAmplitude = parseInt
 
 parseVolume :: Parser Volume
 parseVolume = parseInt
+
+parseOpacity :: Parser Opacity
+parseOpacity = parseInt
 
 parseInt :: Parser Int
 parseInt = do

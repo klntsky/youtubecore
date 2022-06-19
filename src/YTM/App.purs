@@ -35,25 +35,29 @@ import Util.URIHash (setHash)
 import YTM.RecordableSlider as RecordableSlider
 import YTM.Routing (parse) as Route
 import YTM.Routing (stringify)
-import YTM.Types (InvalidVideoURL, Recording, Route, VideoId(..), VideoURLInput, Volume)
+import YTM.Types (InvalidVideoURL, Recording, Route, VideoId, VideoURLInput, Volume, Opacity)
 import YTM.Types (Route) as Route
 import YTM.VideoId (parseVideoId)
+import YTM.VolumeControl (_opacity)
 import YTM.VolumeControl as VolumeControl
 import YTM.YouTubeEmbed as YouTubeEmbed
 
-type State = { videos :: Map VideoIndex VideoState
-             , lastId :: Int
-             }
+type State =
+  { videos :: Map VideoIndex VideoState
+  , lastId :: Int
+  }
 
-type VideoState = { videoId :: Either InvalidVideoURL VideoId
-                  , settings :: NonEmptyArray
-                    { volume :: Volume
-                    , recording :: Maybe Recording
-                    , amplitude :: Int
-                    }
-                  , title :: String
-                  , deleted :: Boolean
-                  }
+type VideoState =
+  { videoId :: Either InvalidVideoURL VideoId
+  , settings :: NonEmptyArray
+    { volume :: Volume
+    , recording :: Maybe Recording
+    , amplitude :: Int
+    }
+  , title :: String
+  , deleted :: Boolean
+  , opacity :: Opacity
+  }
 
 data Action
   = AddVideo
@@ -107,7 +111,6 @@ render state =
     [ renderMixer state
     , renderVideos state
     ]
---  , HH.slot _volumeControl 0 VolumeControl.component 0 (const NoOp)
   ]
 
 renderHeader :: forall m. H.ComponentHTML Action ChildSlots m
@@ -119,7 +122,7 @@ renderHeader = HH.div [ HP.id "header" ]
       [ HP.id "play-button"
       , HP.class_ (wrap "player-button")
       , HE.onClick $ const StartVideos ]
-      [ HH.text "PLAY" ]
+      [ HH.text "PLAY" ] -- TODO: hide when no videos exist
     , HH.span
       [ HP.id "pause-button"
       , HP.class_ (wrap "player-button")
@@ -172,6 +175,10 @@ renderMixer state = HH.div
     ]
   ]
 
+-- | Mute by default
+initialVolume :: Volume
+initialVolume = 0
+
 renderMixerEntry
   :: forall m
   .  MonadAff m
@@ -198,7 +205,7 @@ renderMixerEntry idx videoState =
       ]
     , HH.td
       [ HP.rowSpan 2 ]
-      [ HH.slot _volumeControl idx VolumeControl.component 0 (HandleVolumeControl idx)
+      [ HH.slot _volumeControl idx VolumeControl.component initialVolume (HandleVolumeControl idx)
       ]
     ]
   , HH.tr_
@@ -249,6 +256,7 @@ handleAction = case _ of
             , amplitude: 100
             }
           ]
+        , opacity: 100
         } state.videos
       , lastId: state.lastId + 1
       }
@@ -312,9 +320,12 @@ handleAction = case _ of
           RecordableSlider.FromPlayback -> do
             pure unit
 
-      VolumeControl.UpdateRecordingStates states -> do
-        H.modify_ $ _videos <<< ix videoIndex <<< _settings .~ states
+      VolumeControl.UpdateRecordingStates state@{ settings, opacity } -> do
+        H.modify_ $
+          (_videos <<< ix videoIndex <<< _settings .~ settings) >>>
+          (_videos <<< ix videoIndex <<< _opacity .~ opacity)
         updateURL
+
       VolumeControl.UpdateOpacity opacity -> do
         void $ H.query _embeds videoIndex $ H.mkTell (YouTubeEmbed.UpdateOpacity opacity)
 
@@ -361,6 +372,7 @@ getRoute { videos } = List.fromFoldable $ fold $
     Right validVideoId, false -> pure
       { videoId: validVideoId
       , settings: video.settings
+      , opacity: video.opacity
       }
     _, _ -> []
 
@@ -396,8 +408,9 @@ handleQuery (UpdateFromURIHash hash a) = do
       state <- H.get
       for_ (Map.toUnfoldable state.videos :: Array _)
         \(videoIndex /\ videoParams) -> do
-          H.tell _volumeControl videoIndex
-            (VolumeControl.PutRecordings videoParams.settings)
+          H.tell _volumeControl videoIndex $ VolumeControl.PutRecordings
+            { settings: videoParams.settings
+            , opacity: videoParams.opacity }
   pure $ Just a
 
 applyRoute :: Route.Route -> State -> State
@@ -409,6 +422,7 @@ applyRoute route state =
                , title: ""
                , deleted: false
                , settings: videoParams.settings
+               , opacity: videoParams.opacity
                }
         , lastId = List.length route + state.lastId
         }

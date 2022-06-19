@@ -21,16 +21,16 @@ import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 import Math (exp)
 import Type.Proxy (Proxy(..))
+import YTM.Constants (maxOpacity)
 import YTM.RecordableSlider (ValueUpdateType(..))
 import YTM.RecordableSlider as RS
 import YTM.RecordableSlider as RecordableSlider
 import YTM.Slider (Value)
 import YTM.Slider as Slider
-import YTM.Types (Recording, Volume)
-
-type Opacity = Int
+import YTM.Types (Recording, Volume, Opacity)
 
 type State = { settings :: SliderStates
+             , opacity :: Opacity
              }
 
 type SliderStates = NonEmptyArray
@@ -56,13 +56,13 @@ type ChildSlots =
 
 data Message
  = UpdateValue ValueUpdateType Value
- | UpdateRecordingStates SliderStates
+ | UpdateRecordingStates State
  | UpdateOpacity Opacity
 
 type Slot = H.Slot Query Message
 
 data Query a
- = PutRecordings SliderStates a
+ = PutRecordings State a
 
 component
  :: forall m
@@ -82,8 +82,9 @@ initialState :: Value -> State
 initialState value =
   { settings:
     NEA.singleton { volume: value, recording: Nothing, amplitude: 100 } <>
-    NEA.singleton { volume: value, recording: Nothing, amplitude: 100 } <>
-    NEA.singleton { volume: value, recording: Nothing, amplitude: 100 }
+    NEA.singleton { volume: 50, recording: Nothing, amplitude: 100 } <>
+    NEA.singleton { volume: 50, recording: Nothing, amplitude: 100 }
+  , opacity: 100
   }
 
 render
@@ -175,7 +176,7 @@ renderOpacityControl =
    cfg =
      { value: 100
      , from: 0
-     , to: 400
+     , to: maxOpacity
      , step: 1.0
      , defaultValue: 100
      , title: "OPC"
@@ -193,8 +194,9 @@ handleAction (HandleControl idx msg) =
         else do
         void $ H.query (Proxy :: Proxy "controls") (idx - 1) $
           H.mkTell (RS.SetPlaybackSpeed $ exp ((Int.toNumber adjustedValue - 50.0) / 12.0))
-      H.modify_ $ _settings <<< ix idx <<< _volume .~ rawValue
-      H.get >>= _.settings >>> UpdateRecordingStates >>> H.raise
+      newState <- H.modify $ _settings <<< ix idx <<< _volume .~ rawValue
+      liftEffect $ Console.log $ show newState
+      H.get >>= UpdateRecordingStates >>> H.raise
     RecordableSlider.UpdateValue RecordableSlider.FromPlayback adjustedValue rawValue -> do
       when (idx == 0) do
         raiseValue FromPlayback adjustedValue
@@ -204,14 +206,16 @@ handleAction (HandleControl idx msg) =
     RecordableSlider.UpdateRecording mbRec -> do
       liftEffect $ Console.log $ show idx <> show mbRec
       H.modify_ $ _settings <<< ix idx <<< _recording .~ mbRec
-      H.get >>= _.settings >>> UpdateRecordingStates >>> H.raise
+      H.get >>= UpdateRecordingStates >>> H.raise
 handleAction (HandleAmplitude idx (Slider.UpdateValue newAmplitude)) = do
   void $ H.query (Proxy :: Proxy "controls") idx $
     H.mkTell (RS.PutAmplitude newAmplitude)
   H.modify_ $ _settings <<< ix idx <<< _amplitude .~ newAmplitude
-  H.get >>= _.settings >>> UpdateRecordingStates >>> H.raise
+  H.get >>= UpdateRecordingStates >>> H.raise
 handleAction (HandleOpacity (Slider.UpdateValue newOpacity)) = do
+  H.modify_ _ { opacity = newOpacity }
   H.raise (UpdateOpacity newOpacity)
+  H.get >>= UpdateRecordingStates >>> H.raise
 
 -- | Raise value multipliying it by current amplitude
 raiseValue
@@ -228,14 +232,15 @@ handleQuery
   .  MonadAff m
   => Query a
   -> H.HalogenM State Action ChildSlots i m (Maybe a)
-handleQuery (PutRecordings states a) = do
-  H.modify_ $ _settings .~ states
-  states `forWithIndex_` \idx { recording: mbRecording, volume, amplitude } -> do
+handleQuery (PutRecordings state a) = do
+  H.modify_ $ _settings .~ state.settings
+  state.settings `forWithIndex_` \idx { recording: mbRecording, volume, amplitude } -> do
     for_ mbRecording \recording -> do
       H.query _controls idx $ H.mkTell (RecordableSlider.PutRecording recording)
     void $ H.query _controls idx $ H.mkTell (RS.PutValue volume)
     void $ H.query _controls idx $ H.mkTell (RS.PutAmplitude amplitude)
     void $ H.query _amplitudeControls idx $ H.mkTell (Slider.PutValue amplitude)
+    void $ H.query _opacityControl unit $ H.mkTell (Slider.PutValue state.opacity)
   pure (Just a)
 
 _volume = prop (Proxy :: Proxy "volume")

@@ -1,5 +1,6 @@
 module YTM.Types
        ( InvalidVideoURL
+       , Opacity
        , RecordingEntry
        , Recording
        , Route
@@ -9,7 +10,6 @@ module YTM.Types
        , VideoURLInput
        , Volume
        )
-
 where
 
 import Prelude
@@ -45,17 +45,24 @@ type RecordingEntry =
 -- TODO: NonEmpty
 type Recording = Array RecordingEntry
 
+-- | `0-100` value for video volume
 type Volume = Int
 
+-- | Title that is loaded from YouTube API
 type VideoTitle = String
+
+-- | `0-400` value for video opacity coefficient.
+-- | Opacity property is calculated as `Opacity * Volume / 10000`
+type Opacity = Int
 
 type VideoParams =
   { videoId :: VideoId
-  , settings :: NonEmptyArray
+  , settings :: NonEmptyArray -- TODO: s/settings/controls/
     { volume :: Volume
-    , recording :: Maybe Recording
+    , recording :: Maybe Recording -- TODO: s/recording/automation/
     , amplitude :: Int
     }
+  , opacity :: Opacity
   }
 
 type Route = List VideoParams

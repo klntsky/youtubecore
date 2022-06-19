@@ -5,10 +5,11 @@ import Prelude
 
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
+import Data.Foldable (for_)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (wrap)
-import Data.Traversable (traverse_)
+import Data.Traversable (traverse, traverse_)
 import Effect (Effect)
 import Effect.Aff (Aff, delay)
 import Effect.Aff.Class (class MonadAff)
@@ -16,8 +17,7 @@ import Halogen (liftAff, liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
-import YTM.Types (VideoId, VideoTitle, Volume)
-import YTM.VolumeControl (Opacity)
+import YTM.Types (VideoId, VideoTitle, Volume, Opacity)
 
 type Slot = H.Slot Query Message
 
@@ -120,8 +120,10 @@ handleQuery _ (ResumeVideo a) = do
   H.gets _.player >>= traverse_
     (liftEffect <<< resumePlayer)
   pure $ Just a
-handleQuery _ (UpdateOpacity opacity a) = do
+handleQuery playerId (UpdateOpacity opacity a) = do
   H.modify_ _ { opacity = opacity }
+  H.gets _.player >>= traverse (liftEffect <<< getVolume)
+    >>= traverse_ (setPlayerOpacity playerId)
   pure $ Just a
 
 setPlayerOpacity
@@ -158,6 +160,13 @@ handleAction playerId = case _ of
       liftEffect $ destroyPlayer player
     H.gets _.bgTask >>= traverse_ H.kill
 
+createYouTubePlayer
+  :: forall cs m
+  .  MonadAff m
+  => PlayerId
+  -> VideoId
+  -> Volume
+  -> H.HalogenM State Action cs Message m Unit
 createYouTubePlayer playerId videoId volume = do
   player <- createPlayerElement playerId videoId volume
   setPlayerOpacity playerId volume
@@ -175,6 +184,13 @@ createYouTubePlayer playerId videoId volume = do
   title <- liftAff $ loadVideoTitle videoId
   H.raise (SetTitle title)
 
+createPlayerElement
+  :: forall cs m
+  .  MonadAff m
+  => PlayerId
+  -> VideoId
+  -> Volume
+  -> H.HalogenM State Action cs Message m YouTubePlayer
 createPlayerElement playerId videoId volume =
   liftEffect $ newYouTubePlayer (playerIdToElementId playerId) videoId volume
 

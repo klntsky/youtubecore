@@ -2,9 +2,7 @@ module Util.URIHash where
 
 import Prelude
 
-import Data.Maybe (fromMaybe)
 import Effect (Effect)
-import JSURI (decodeURIComponent, encodeURIComponent)
 import Web.HTML as HTML
 import Web.HTML.Location as Location
 import Web.HTML.Window as Window

@@ -2,7 +2,7 @@
 
 ## About
 
-TODO
+YouTubeCore is a mixer for YouTube embedded players with automation and VJing capabilities.
 
 ## Building
 
