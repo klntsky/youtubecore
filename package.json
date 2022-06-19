@@ -12,6 +12,7 @@
   "author": "klntsky",
   "license": "ISC",
   "dependencies": {
-    "esbuild": "^0.14.39"
+    "esbuild": "^0.14.39",
+    "spago": "^0.20.9"
   }
 }

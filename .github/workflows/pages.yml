@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-permissions: 
+permissions:
   contents: write
 jobs:
   build-and-deploy:
@@ -15,7 +15,7 @@ jobs:
 
       - name: Install and Build
         run: |
-          export PURS_VERSION="0.14.5"
+          export PURS_VERSION="v0.14.5"
           echo "PureScript version: $PURS_VERSION"
           wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/$PURS_VERSION/linux64.tar.gz
           tar -xvf $HOME/purescript.tar.gz -C $HOME/
@@ -28,5 +28,5 @@ jobs:
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
-          branch: gh-pages 
+          branch: gh-pages
           folder: build
