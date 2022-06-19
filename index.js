@@ -13078,6 +13078,17 @@ var PS = {};
           };
       };
   };
+  var setPlaybackSpeed = function (dictMonadAff) {
+      return function (idx) {
+          return function (value) {
+              return Data_Functor["void"](Halogen_Query_HalogenM.functorHalogenM)(Halogen_Query_HalogenM.query()({
+                  reflectSymbol: function () {
+                      return "controls";
+                  }
+              })(Data_Ord.ordInt)(_controls)(idx)(Halogen_Query.mkTell(YTM_RecordableSlider.SetPlaybackSpeed.create($$Math.exp((Data_Int.toNumber(value) - 50.0) / 12.0)))));
+          };
+      };
+  };
   var _amplitudeControls = Type_Proxy["Proxy"].value;
   var handleQuery = function (dictMonadAff) {
       return function (v) {
@@ -13106,11 +13117,13 @@ var PS = {};
                                           return "amplitudeControls";
                                       }
                                   })(Data_Ord.ordInt)(_amplitudeControls)(idx)(Halogen_Query.mkTell(YTM_Slider.PutValue.create(v1.amplitude)))))(function () {
-                                      return Data_Functor["void"](Halogen_Query_HalogenM.functorHalogenM)(Halogen_Query_HalogenM.query()({
+                                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Data_Functor["void"](Halogen_Query_HalogenM.functorHalogenM)(Halogen_Query_HalogenM.query()({
                                           reflectSymbol: function () {
                                               return "opacityControl";
                                           }
-                                      })(Data_Ord.ordUnit)(_opacityControl)(Data_Unit.unit)(Halogen_Query.mkTell(YTM_Slider.PutValue.create(v.value0.opacity))));
+                                      })(Data_Ord.ordUnit)(_opacityControl)(Data_Unit.unit)(Halogen_Query.mkTell(YTM_Slider.PutValue.create(v.value0.opacity)))))(function () {
+                                          return setPlaybackSpeed(dictMonadAff)(idx - 1 | 0)(v1.volume);
+                                      });
                                   });
                               });
                           });
@@ -13154,22 +13167,18 @@ var PS = {};
           if (v instanceof HandleControl) {
               if (v.value1 instanceof YTM_RecordableSlider.UpdateValue && v.value1.value0 instanceof YTM_RecordableSlider.FromUser) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)((function () {
-                      var $24 = v.value0 === 0;
-                      if ($24) {
+                      var $25 = v.value0 === 0;
+                      if ($25) {
                           return raiseValue(dictMonadAff)(YTM_RecordableSlider.FromUser.value)(v.value1.value1);
                       };
-                      return Data_Functor["void"](Halogen_Query_HalogenM.functorHalogenM)(Halogen_Query_HalogenM.query()({
-                          reflectSymbol: function () {
-                              return "controls";
-                          }
-                      })(Data_Ord.ordInt)(Type_Proxy["Proxy"].value)(v.value0 - 1 | 0)(Halogen_Query.mkTell(YTM_RecordableSlider.SetPlaybackSpeed.create($$Math.exp((Data_Int.toNumber(v.value1.value1) - 50.0) / 12.0)))));
+                      return setPlaybackSpeed(dictMonadAff)(v.value0 - 1 | 0)(v.value1.value1);
                   })())(function () {
                       return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify(Halogen_Query_HalogenM.monadStateHalogenM)(Data_Lens_Setter.set((function () {
-                          var $42 = _settings(Data_Profunctor_Strong.strongFn);
-                          var $43 = Data_Lens_Index.ix(Data_Lens_Index.indexNonEmptyArray)(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                          var $44 = _volume(Data_Profunctor_Strong.strongFn);
-                          return function ($45) {
-                              return $42($43($44($45)));
+                          var $43 = _settings(Data_Profunctor_Strong.strongFn);
+                          var $44 = Data_Lens_Index.ix(Data_Lens_Index.indexNonEmptyArray)(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                          var $45 = _volume(Data_Profunctor_Strong.strongFn);
+                          return function ($46) {
+                              return $43($44($45($46)));
                           };
                       })())(v.value1.value2)))(function (newState) {
                           return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))(Effect_Console.log(Data_Show.show(Data_Show.showRecord()(Data_Show.showRecordFieldsCons({
@@ -13201,8 +13210,8 @@ var PS = {};
                                   return "value";
                               }
                           })(Data_Show.showRecordFieldsNil)(Data_Show.showInt))(Data_Time_Duration.showMilliseconds))))))(Data_Show.showInt)))))(Data_Show.showInt)))(newState))))(function () {
-                              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($46) {
-                                  return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($46));
+                              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($47) {
+                                  return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($47));
                               });
                           });
                       });
@@ -13210,11 +13219,7 @@ var PS = {};
               };
               if (v.value1 instanceof YTM_RecordableSlider.UpdateValue && v.value1.value0 instanceof YTM_RecordableSlider.FromPlayback) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Applicative.when(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0 === 0)(raiseValue(dictMonadAff)(YTM_RecordableSlider.FromPlayback.value)(v.value1.value1)))(function () {
-                      return Control_Applicative.when(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0 !== 0)(Data_Functor["void"](Halogen_Query_HalogenM.functorHalogenM)(Halogen_Query_HalogenM.query()({
-                          reflectSymbol: function () {
-                              return "controls";
-                          }
-                      })(Data_Ord.ordInt)(Type_Proxy["Proxy"].value)(v.value0 - 1 | 0)(Halogen_Query.mkTell(YTM_RecordableSlider.SetPlaybackSpeed.create($$Math.exp((Data_Int.toNumber(v.value1.value1) - 50.0) / 12.0))))));
+                      return Control_Applicative.when(Halogen_Query_HalogenM.applicativeHalogenM)(v.value0 !== 0)(setPlaybackSpeed(dictMonadAff)(v.value0 - 1 | 0)(v.value1.value1));
                   });
               };
               if (v.value1 instanceof YTM_RecordableSlider.UpdateRecording) {
@@ -13228,55 +13233,55 @@ var PS = {};
                       }
                   })(Data_Show.showRecordFieldsNil)(Data_Show.showInt))(Data_Time_Duration.showMilliseconds)))))(v.value1.value0))))(function () {
                       return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(Data_Lens_Setter.set((function () {
-                          var $47 = _settings(Data_Profunctor_Strong.strongFn);
-                          var $48 = Data_Lens_Index.ix(Data_Lens_Index.indexNonEmptyArray)(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                          var $49 = _recording(Data_Profunctor_Strong.strongFn);
-                          return function ($50) {
-                              return $47($48($49($50)));
+                          var $48 = _settings(Data_Profunctor_Strong.strongFn);
+                          var $49 = Data_Lens_Index.ix(Data_Lens_Index.indexNonEmptyArray)(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                          var $50 = _recording(Data_Profunctor_Strong.strongFn);
+                          return function ($51) {
+                              return $48($49($50($51)));
                           };
                       })())(v.value1.value0)))(function () {
-                          return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($51) {
-                              return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($51));
+                          return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($52) {
+                              return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($52));
                           });
                       });
                   });
               };
-              throw new Error("Failed pattern match at YTM.VolumeControl (line 190, column 3 - line 209, column 50): " + [ v.value1.constructor.name ]);
+              throw new Error("Failed pattern match at YTM.VolumeControl (line 190, column 3 - line 207, column 50): " + [ v.value1.constructor.name ]);
           };
           if (v instanceof HandleAmplitude) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Data_Functor["void"](Halogen_Query_HalogenM.functorHalogenM)(Halogen_Query_HalogenM.query()({
                   reflectSymbol: function () {
                       return "controls";
                   }
-              })(Data_Ord.ordInt)(Type_Proxy["Proxy"].value)(v.value0)(Halogen_Query.mkTell(YTM_RecordableSlider.PutAmplitude.create(v.value1.value0)))))(function () {
+              })(Data_Ord.ordInt)(_controls)(v.value0)(Halogen_Query.mkTell(YTM_RecordableSlider.PutAmplitude.create(v.value1.value0)))))(function () {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(Data_Lens_Setter.set((function () {
-                      var $52 = _settings(Data_Profunctor_Strong.strongFn);
-                      var $53 = Data_Lens_Index.ix(Data_Lens_Index.indexNonEmptyArray)(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                      var $54 = _amplitude(Data_Profunctor_Strong.strongFn);
-                      return function ($55) {
-                          return $52($53($54($55)));
+                      var $53 = _settings(Data_Profunctor_Strong.strongFn);
+                      var $54 = Data_Lens_Index.ix(Data_Lens_Index.indexNonEmptyArray)(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                      var $55 = _amplitude(Data_Profunctor_Strong.strongFn);
+                      return function ($56) {
+                          return $53($54($55($56)));
                       };
                   })())(v.value1.value0)))(function () {
-                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($56) {
-                          return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($56));
+                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($57) {
+                          return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($57));
                       });
                   });
               });
           };
           if (v instanceof HandleOpacity) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                  var $37 = {};
-                  for (var $38 in v1) {
-                      if ({}.hasOwnProperty.call(v1, $38)) {
-                          $37[$38] = v1[$38];
+                  var $38 = {};
+                  for (var $39 in v1) {
+                      if ({}.hasOwnProperty.call(v1, $39)) {
+                          $38[$39] = v1[$39];
                       };
                   };
-                  $37.opacity = v.value0.value0;
-                  return $37;
+                  $38.opacity = v.value0.value0;
+                  return $38;
               }))(function () {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Halogen_Query_HalogenM.raise(new UpdateOpacity(v.value0.value0)))(function () {
-                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($57) {
-                          return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($57));
+                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function ($58) {
+                          return Halogen_Query_HalogenM.raise(UpdateRecordingStates.create($58));
                       });
                   });
               });
@@ -14306,7 +14311,7 @@ var PS = {};
                               })(Data_Ord.ordInt)(_embeds)(indexToKill)(YTM_YouTubeEmbed.KillPlayer.create);
                           }))(function () {
                               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(applyRoute(mbRoute.value0)))(function () {
-                                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Effect_Aff.delay(Data_Newtype.wrap()(1000.0))))(function () {
+                                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Effect_Aff.delay(Data_Newtype.wrap()(1.0))))(function () {
                                       return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))(function (state) {
                                           return Data_Foldable.for_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray)(state.videos))(function (v1) {
                                               return Halogen_Query.tell()({
