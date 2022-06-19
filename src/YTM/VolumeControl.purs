@@ -7,7 +7,7 @@ import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int as Int
-import Data.Lens ((.~))
+import Data.Lens (Lens', (.~))
 import Data.Lens.Index (ix)
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
@@ -192,8 +192,7 @@ handleAction (HandleControl idx msg) =
       if idx == 0
         then raiseValue FromUser adjustedValue
         else do
-        void $ H.query (Proxy :: Proxy "controls") (idx - 1) $
-          H.mkTell (RS.SetPlaybackSpeed $ exp ((Int.toNumber adjustedValue - 50.0) / 12.0))
+        setPlaybackSpeed (idx - 1) adjustedValue
       newState <- H.modify $ _settings <<< ix idx <<< _volume .~ rawValue
       liftEffect $ Console.log $ show newState
       H.get >>= UpdateRecordingStates >>> H.raise
@@ -201,14 +200,13 @@ handleAction (HandleControl idx msg) =
       when (idx == 0) do
         raiseValue FromPlayback adjustedValue
       when (idx /= 0) do
-        void $ H.query (Proxy :: Proxy "controls") (idx - 1) $
-          H.mkTell (RS.SetPlaybackSpeed $ exp ((Int.toNumber adjustedValue - 50.0) / 12.0))
+        setPlaybackSpeed (idx - 1) adjustedValue
     RecordableSlider.UpdateRecording mbRec -> do
       liftEffect $ Console.log $ show idx <> show mbRec
       H.modify_ $ _settings <<< ix idx <<< _recording .~ mbRec
       H.get >>= UpdateRecordingStates >>> H.raise
 handleAction (HandleAmplitude idx (Slider.UpdateValue newAmplitude)) = do
-  void $ H.query (Proxy :: Proxy "controls") idx $
+  void $ H.query _controls idx $
     H.mkTell (RS.PutAmplitude newAmplitude)
   H.modify_ $ _settings <<< ix idx <<< _amplitude .~ newAmplitude
   H.get >>= UpdateRecordingStates >>> H.raise
@@ -227,6 +225,17 @@ raiseValue
 raiseValue updateType value = do
   H.raise $ UpdateValue updateType value
 
+setPlaybackSpeed
+  :: forall m state message action
+  .  MonadAff m
+  => SliderIndex
+  -> Value
+  -> H.HalogenM state action ChildSlots message m Unit
+setPlaybackSpeed idx value = do
+  void $ H.query _controls idx $
+    H.mkTell $ RS.SetPlaybackSpeed $
+    exp ((Int.toNumber value - 50.0) / 12.0)
+
 handleQuery
   :: forall a m i
   .  MonadAff m
@@ -241,6 +250,7 @@ handleQuery (PutRecordings state a) = do
     void $ H.query _controls idx $ H.mkTell (RS.PutAmplitude amplitude)
     void $ H.query _amplitudeControls idx $ H.mkTell (Slider.PutValue amplitude)
     void $ H.query _opacityControl unit $ H.mkTell (Slider.PutValue state.opacity)
+    setPlaybackSpeed (idx - 1) volume
   pure (Just a)
 
 _volume = prop (Proxy :: Proxy "volume")

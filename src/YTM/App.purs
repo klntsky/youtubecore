@@ -404,7 +404,7 @@ handleQuery (UpdateFromURIHash hash a) = do
         H.tell _embeds indexToKill YouTubeEmbed.KillPlayer
       -- Reset state
       H.modify_ (applyRoute newRoute)
-      liftAff $ delay (wrap 1000.0)
+      liftAff $ delay (wrap 1.0)
       state <- H.get
       for_ (Map.toUnfoldable state.videos :: Array _)
         \(videoIndex /\ videoParams) -> do
