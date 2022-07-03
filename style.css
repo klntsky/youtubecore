@@ -234,6 +234,10 @@ input[type='range']::-webkit-slider-thumb {
     position: fixed;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
     color: #CCC;
     background-color: #222;
