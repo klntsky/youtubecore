@@ -12,6 +12,7 @@ import Effect.Exception (throw)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
 import Util.URIHash (getHash)
+import Utils.FullScreen (listenForFullscreenExit)
 import Web.DOM.Document (Document)
 import Web.HTML as HTML
 import Web.HTML.HTMLDocument as HTMLDocument
@@ -40,6 +41,9 @@ main = HA.runHalogenAff do
   bd <- liftEffect $ HTMLDocument.body htmlDocument >>=
     maybe (throw $ "no document body") pure
   liftEffect $ observe (HTMLElement.toElement bd) {} observer
+  liftEffect do
+    listenForFullscreenExit do
+      launchAff_ $ io.query $ ExitFullscreen unit
 
 getDocument :: Effect Document
 getDocument = HTML.window >>= map HTMLDocument.toDocument <<< Window.document

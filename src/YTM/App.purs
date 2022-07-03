@@ -22,6 +22,7 @@ import Data.String.CodeUnits as CodeUnits
 import Data.Traversable (for_, traverse_)
 import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\))
+import Effect (Effect)
 import Effect.Aff (delay)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Console as Console
@@ -45,6 +46,7 @@ import YTM.YouTubeEmbed as YouTubeEmbed
 type State =
   { videos :: Map VideoIndex VideoState
   , lastId :: Int
+  , fullscreen :: Boolean
   }
 
 type VideoState =
@@ -67,12 +69,14 @@ data Action
   | UpdateVideoId VideoIndex VideoURLInput
   | StartVideos
   | PauseVideos
+  | FullScreen
   | NoOp
 
 data Query a
   = UpdateFromURIHash String a
   -- ^ Load state from router. Only happens on startup
   | UpdateWindowSize Int Int a
+  | ExitFullscreen a
 
 -- index of a video in the State array
 type VideoIndex = Int
@@ -106,7 +110,7 @@ initialState hash =
     Just route -> applyRoute route defaultState
   where
     mbRoute = Route.parse hash
-    defaultState = { videos: Map.empty, lastId: 0 }
+    defaultState = { videos: Map.empty, lastId: 0, fullscreen: false }
 
 render
   :: forall m
@@ -137,6 +141,11 @@ renderHeader = HH.div [ HP.id "header" ]
       , HP.class_ (wrap "player-button")
       , HE.onClick $ const PauseVideos ]
       [ HH.text "PAUSE" ]
+    , HH.span
+      [ HP.id "fullscreen-button"
+      , HP.class_ (wrap "player-button")
+      , HE.onClick $ const FullScreen ]
+      [ HH.text "FULLSCREEN" ]
     ]
   ]
 
@@ -247,7 +256,8 @@ handleAction = case _ of
 
   AddVideo -> do
     H.modify_ $ \state ->
-      { videos: Map.insert
+      state
+      { videos = Map.insert
         state.lastId
         { videoId: Left ""
         , title: ""
@@ -268,7 +278,7 @@ handleAction = case _ of
           ]
         , opacity: 100
         } state.videos
-      , lastId: state.lastId + 1
+      , lastId = state.lastId + 1
       }
 
   RemoveVideo videoIndex -> do
@@ -340,6 +350,10 @@ handleAction = case _ of
     getExistingPlayerIds >>= traverse_
       (flip (H.tell _embeds) YouTubeEmbed.PauseVideo)
 
+  FullScreen -> do
+    liftEffect requestFullscreen
+    H.modify_ _ { fullscreen = true }
+
   NoOp -> pure unit
 
 updateURL :: forall m i
@@ -398,15 +412,23 @@ handleQuery (UpdateFromURIHash hash a) = do
             , opacity: videoParams.opacity }
   pure $ Just a
 handleQuery (UpdateWindowSize width height a) = do
+  isFullscreen <- H.gets _.fullscreen
   getExistingPlayerIds >>= traverse_ \ix -> do
-    H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize
-      (minCap 300 $ width - 750)
-      (minCap 300 $ height - 50)
+    if isFullscreen
+      then H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize
+           (minCap 300 $ width)
+           (minCap 300 $ height)
+      else H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize
+           (minCap 300 $ width - 750)
+           (minCap 300 $ height - 50)
   pure $ Just a
   where
     minCap cap x
       | x < cap = cap
       | otherwise = x
+handleQuery (ExitFullscreen a) = do
+  H.modify_ _ { fullscreen = false }
+  pure $ Just a
 
 applyRoute :: Route.Route -> State -> State
 applyRoute route state =
@@ -421,6 +443,8 @@ applyRoute route state =
                }
         , lastId = List.length route + state.lastId
         }
+
+foreign import requestFullscreen :: Effect Unit
 
 _videos = prop (Proxy :: Proxy "videos")
 _volume = prop (Proxy :: Proxy "volume")
