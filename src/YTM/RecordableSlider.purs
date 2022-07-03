@@ -126,7 +126,7 @@ initialState { value, from, to, defaultValue, step, title, amplitude, recording 
   { recorderState: Inactive
   , playbackState: case recording of
     Nothing -> PlaybackPaused Nothing
-    Just recording -> PlaybackReady recording
+    Just rec -> PlaybackReady rec
   , lastSentValue: value
   , lastAmplitude: amplitude
   , constantValue: value
@@ -208,11 +208,13 @@ renderPlaybackButton state =
         PlaybackPlaying _ _ ->
           HH.span
           [ HP.class_ (wrap "playback-button")
+          , HP.title "Pause automation playback"
           , HE.onClick $ const PlaybackPause ]
           [ HH.text "⏸" ]
         PlaybackPaused (Just _) ->
           HH.span
           [ HP.class_ (wrap "playback-button")
+          , HP.title "Resume automation playback"
           , HE.onClick $ const PlaybackResume ]
           [ HH.text "🞂" ]
         PlaybackPaused Nothing ->
