@@ -3,16 +3,17 @@ module YTM.VolumeControl where
 
 import Prelude
 
+import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int as Int
-import Data.Lens (Lens', (.~))
+import Data.Lens (Lens', (.~), (^?))
 import Data.Lens.Index (ix)
 import Data.Lens.Record (prop)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (wrap)
-import Data.Traversable (for_)
+import Data.Tuple.Nested (type (/\), (/\))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
@@ -29,11 +30,13 @@ import YTM.Slider (Value)
 import YTM.Slider as Slider
 import YTM.Types (Recording, Volume, Opacity)
 
-type State = { settings :: SliderStates
+type State = { settings :: NonEmptyArray SliderState
              , opacity :: Opacity
              }
 
-type SliderStates = NonEmptyArray
+type SliderStates = NonEmptyArray SliderState
+
+type SliderState =
   { volume :: Volume
   , recording :: Maybe Recording
   , amplitude :: Value
@@ -64,10 +67,12 @@ type Slot = H.Slot Query Message
 data Query a
  = PutRecordings State a
 
+type Label = String
+
 component
  :: forall m
  .  MonadAff m
- => H.Component Query Value Message m
+ => H.Component Query State Message m
 component =
  H.mkComponent
  { initialState
@@ -78,83 +83,84 @@ component =
                                   }
  }
 
-initialState :: Value -> State
-initialState value =
-  { settings:
-    NEA.singleton { volume: value, recording: Nothing, amplitude: 100 } <>
-    NEA.singleton { volume: 50, recording: Nothing, amplitude: 100 } <>
-    NEA.singleton { volume: 50, recording: Nothing, amplitude: 100 }
-  , opacity: 100
-  }
+initialState :: State -> State
+initialState _value = _value
 
 render
  :: forall m
  .  MonadAff m
  => State
  -> H.ComponentHTML Action ChildSlots m
-render _state = HH.table_
- [ HH.tr_
-   [ renderControl 0 "VOL"
-   , renderAmplitude 0
-   ]
- , HH.tr_
-   [ renderControl 1 "SPD"
-   , renderAmplitude 1
-   ]
- , HH.tr_
-   [ renderControl 2 "MOD"
-   , renderAmplitude 2
-   ]
- , HH.tr_
-   [ renderOpacityControl ]
- ]
+render state = HH.table_ $
+  Array.zipWith mkController
+  (Array.fromFoldable state.settings)
+  [ 0 /\ "VOL" /\ volumeTitle, 1 /\ "SPD" /\ speedTitle, 2 /\ "MOD" /\ modTitle ] <>
+  [ HH.tr_
+    [ renderOpacityControl state.opacity ]
+  ]
+  where
+    mkController :: SliderState -> (SliderIndex /\ Label /\ String) -> H.ComponentHTML Action ChildSlots m
+    mkController { volume, recording, amplitude } (idx /\ label /\ title) =
+      HH.tr_
+      [ renderControl idx label volume recording title
+      , renderAmplitude idx amplitude
+      ]
+    volumeTitle = "Video volume"
+    speedTitle = "Speed of video volume automation playback"
+    modTitle = "Modulation of automation speed of the above slider"
 
 renderControl
   :: forall m
   .  MonadAff m
   => Int
+  -> Label
+  -> Volume
+  -> Maybe Recording
   -> String
   -> H.ComponentHTML Action ChildSlots m
-renderControl idx title =
- HH.td [ HP.class_ (wrap "slider-input-container") ]
- [ HH.slot _controls idx RecordableSlider.component (mkComponentCfg idx)
-   (HandleControl idx)
- ]
- where
+renderControl idx title volume recording elTitle =
+  HH.td [ HP.class_ (wrap "slider-input-container"), HP.title elTitle ]
+  [ HH.slot _controls idx RecordableSlider.component (mkComponentCfg idx)
+    (HandleControl idx)
+  ]
+  where
     -- Volume control
-   mkComponentCfg 0 =
-     { value: 0
-     , from: 0
-     , to: 100
-     , step: 1.0
-     , amplitude: 100
-     , defaultValue: 0
-     , title
-     }
-   -- Modulation control
-   mkComponentCfg _ =
-     { value: 50
-     , from: 0
-     , to: 100
-     , step: 1.0
-     , amplitude: 100
-     , defaultValue: 50
-     , title
-     }
+    mkComponentCfg 0 =
+      { value: volume
+      , from: 0
+      , to: 100
+      , step: 1.0
+      , amplitude: 100
+      , defaultValue: 0
+      , title
+      , recording: recording
+      }
+    -- Modulation control
+    mkComponentCfg _ =
+      { value: volume
+      , from: 0
+      , to: 100
+      , step: 1.0
+      , amplitude: 100
+      , defaultValue: 50
+      , title
+      , recording: recording
+      }
 
 renderAmplitude
   :: forall m
   .  MonadAff m
   => Int
+  -> Int
   -> H.ComponentHTML Action ChildSlots m
-renderAmplitude idx =
- HH.td [ HP.class_ (wrap "slider-input-container") ]
+renderAmplitude idx amplitude =
+ HH.td [ HP.class_ (wrap "slider-input-container"), HP.title "Amplitude of the slider to the left"]
  [ HH.slot _amplitudeControls idx Slider.component cfg
    (HandleAmplitude idx)
  ]
  where
    cfg =
-     { value: 100
+     { value: amplitude
      , from: 0
      , to: 200
      , step: 1.0
@@ -165,16 +171,17 @@ renderAmplitude idx =
 renderOpacityControl
  :: forall m
  .  MonadAff m
- => H.ComponentHTML Action ChildSlots m
-renderOpacityControl =
+ => Opacity
+ -> H.ComponentHTML Action ChildSlots m
+renderOpacityControl opacity =
   HH.td
-  [ HP.colSpan 2 ]
+  [ HP.colSpan 2, HP.title "Video opacity coefficient" ]
   [ HH.slot _opacityControl unit Slider.component cfg
     HandleOpacity
   ]
  where
    cfg =
-     { value: 100
+     { value: opacity
      , from: 0
      , to: maxOpacity
      , step: 1.0
@@ -196,7 +203,7 @@ handleAction (HandleControl idx msg) =
       newState <- H.modify $ _settings <<< ix idx <<< _volume .~ rawValue
       liftEffect $ Console.log $ show newState
       H.get >>= UpdateRecordingStates >>> H.raise
-    RecordableSlider.UpdateValue RecordableSlider.FromPlayback adjustedValue rawValue -> do
+    RecordableSlider.UpdateValue RecordableSlider.FromPlayback adjustedValue _ -> do
       when (idx == 0) do
         raiseValue FromPlayback adjustedValue
       when (idx /= 0) do
@@ -237,22 +244,22 @@ setPlaybackSpeed idx value = do
     exp ((Int.toNumber value - 50.0) / 12.0)
 
 handleQuery
-  :: forall a m i
+  :: forall a m
   .  MonadAff m
   => Query a
-  -> H.HalogenM State Action ChildSlots i m (Maybe a)
+  -> H.HalogenM State Action ChildSlots Message m (Maybe a)
 handleQuery (PutRecordings state a) = do
   H.modify_ $ _settings .~ state.settings
   state.settings `forWithIndex_` \idx { recording: mbRecording, volume, amplitude } -> do
-    for_ mbRecording \recording -> do
-      H.query _controls idx $ H.mkTell (RecordableSlider.PutRecording recording)
-    void $ H.query _controls idx $ H.mkTell (RS.PutValue volume)
+    void $ H.query _opacityControl unit $ H.mkTell (Slider.PutValue state.opacity)
     void $ H.query _controls idx $ H.mkTell (RS.PutAmplitude amplitude)
     void $ H.query _amplitudeControls idx $ H.mkTell (Slider.PutValue amplitude)
-    void $ H.query _opacityControl unit $ H.mkTell (Slider.PutValue state.opacity)
     setPlaybackSpeed (idx - 1) volume
+  H.raise $ UpdateValue FromPlayback $ fromMaybe 0 $ state.settings ^? ix 0 <<< _volume
+  H.raise (UpdateOpacity $ state.opacity)
   pure (Just a)
 
+_volume :: forall rest a. Lens' { volume :: a | rest} a
 _volume = prop (Proxy :: Proxy "volume")
 _settings = prop (Proxy :: Proxy "settings")
 _recording = prop (Proxy :: Proxy "recording")

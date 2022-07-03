@@ -23,8 +23,8 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Web.UIEvent.MouseEvent (MouseEvent, ctrlKey, shiftKey)
-import YTM.Types (RecordingEntry, Recording)
 import YTM.Slider (Value, getValueFromEvent, valueFromString)
+import YTM.Types (RecordingEntry, Recording)
 
 -- | Time of the previous recording frame
 type LastTime = Instant
@@ -41,6 +41,7 @@ instance Show RecorderState where
 
 data PlaybackState
   = PlaybackPlaying (Array RecordingEntry) H.ForkId
+  | PlaybackReady Recording
   -- TODO: | PlaybackOnHold we started recording while playback was active
   | PlaybackPaused (Maybe (Array RecordingEntry))
 
@@ -69,14 +70,13 @@ data Action
   | PlaybackPause
   | PlaybackResume
   | DeleteRecording
+  | Init
 
 type IsPlaying = Boolean
 
 data Query a
   = SetValueFromPlayer Value (IsPlaying -> a)
   -- ^ Indicates that the user manually changed the value, provides IsPlaying flag back.
-  | PutRecording Recording a
-  | PutValue Value a
   | PutAmplitude Int a
   | SetPlaybackSpeed Number a
 
@@ -104,6 +104,7 @@ type Params =
   , amplitude :: Int
   , defaultValue :: Value
   , title :: String
+  , recording :: Maybe Recording
   }
 
 component
@@ -116,14 +117,16 @@ component =
   , render: render
   , eval: H.mkEval $ H.defaultEval { handleAction = handleAction
                                    , handleQuery = handleQuery
-                                   , initialize = Nothing
+                                   , initialize = Just Init
                                    }
   }
 
 initialState :: Params -> State
-initialState { value, from, to, defaultValue, step, title, amplitude } =
+initialState { value, from, to, defaultValue, step, title, amplitude, recording } =
   { recorderState: Inactive
-  , playbackState: PlaybackPaused Nothing
+  , playbackState: case recording of
+    Nothing -> PlaybackPaused Nothing
+    Just recording -> PlaybackReady recording
   , lastSentValue: value
   , lastAmplitude: amplitude
   , constantValue: value
@@ -214,12 +217,18 @@ renderPlaybackButton state =
           [ HH.text "🞂" ]
         PlaybackPaused Nothing ->
           HH.text ""
+        PlaybackReady _ -> HH.text ""
 
 handleAction
   :: forall m cs
   .  MonadAff m
   => Action -> H.HalogenM State Action cs Message m Unit
 handleAction = case _ of
+  Init -> do
+    void $ H.gets _.lastSentValue >>= raiseValue FromPlayback
+    H.gets _.playbackState >>= case _ of
+      PlaybackReady recording -> startPlaybackProcess recording
+      _ -> pure unit
   GetReadyToRecord -> do
     H.modify_ \state ->
       state { recorderState = ReadyToRecord }
@@ -332,11 +341,11 @@ stopPlaybackProcess
 stopPlaybackProcess = do
   state <- H.get
   case state.playbackState of
-    PlaybackPaused _ -> pure unit
     PlaybackPlaying recording forkId -> do
       H.kill forkId
       H.put $ state
         { playbackState = PlaybackPaused (Just recording) }
+    _ -> pure unit
 
 -- | Tell the parent component a new value
 raiseValue
@@ -372,6 +381,7 @@ handleQuery (SetValueFromPlayer value cb) = do
     isPlaying = case state.playbackState of
       PlaybackPlaying _ _ -> true
       PlaybackPaused _ -> false
+      PlaybackReady _ -> false
   pure $ Just (cb isPlaying)
 handleQuery (PutAmplitude amplitude a) = do
   state <- H.modify _ { amplitude = amplitude }
@@ -379,18 +389,6 @@ handleQuery (PutAmplitude amplitude a) = do
     PlaybackPaused _ -> do
       H.gets _.lastSentValue >>=
         void <<< raiseValue FromUser
-    _ -> pure unit
-  pure $ Just a
-handleQuery (PutRecording recording a) = do
-  startPlaybackProcess recording
-  pure $ Just a
-handleQuery (PutValue value a) = do
-  -- Set value if `RecorderState` is `Inactive`, otherwise ignore (because automation is used).
-  state <- H.get
-  case state.playbackState of
-    PlaybackPaused _ -> do
-      H.modify_ _ { lastSentValue = value }
-      void $ raiseValue FromPlayback value
     _ -> pure unit
   pure $ Just a
 handleQuery (SetPlaybackSpeed speed a) = do

@@ -5,11 +5,10 @@ import Prelude
 
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
-import Data.Foldable (for_)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (wrap)
-import Data.Traversable (traverse, traverse_)
+import Data.Traversable (traverse_)
 import Effect (Effect)
 import Effect.Aff (Aff, delay)
 import Effect.Aff.Class (class MonadAff)
@@ -27,11 +26,14 @@ type ElementId = String
 
 foreign import newYouTubePlayer :: ElementId -> VideoId -> Volume -> Effect YouTubePlayer
 
-type State = { player :: Maybe YouTubePlayer
-             , bgTask :: Maybe H.ForkId
-             , volume :: Volume
-             , opacity :: Opacity
-             }
+type State =
+  { player :: Maybe YouTubePlayer
+  , playerId :: PlayerId
+  , bgTask :: Maybe H.ForkId
+  , volume :: Volume
+  , opacity :: Opacity
+  , videoId :: VideoId
+  }
 
 foreign import loadVideoTitle_
   :: (forall a. a -> Maybe a)
@@ -67,78 +69,94 @@ data Query a
   | UpdateOpacity Opacity a
 
 -- Что мы отправляем наружу?
-data Message = SetTitle String | UpdateVolume Volume
+data Message = SetTitle String
 
-data Action = CreateYouTubePlayer VideoId Volume | DestroyPlayer
+data Action = CreateYouTubePlayer | DestroyPlayer
 
 type PlayerId = Int
+
+type EmbedInit =
+  { videoId :: VideoId
+  , volume :: Volume
+  , opacity :: Opacity }
 
 mkComponent
   :: forall m
   .  MonadAff m
-  => PlayerId -> Maybe VideoId -> Volume -> H.Component Query VideoId Message m
-mkComponent playerId mbVideoId volume =
+  => PlayerId
+  -> H.Component Query EmbedInit Message m
+mkComponent playerId =
   H.mkComponent
-  { initialState
+  { initialState: initialState playerId
   , render: render playerId
-  , eval: H.mkEval $ H.defaultEval { handleAction = handleAction playerId
-                                   , handleQuery = handleQuery playerId
-                                   , initialize = mbVideoId <#> \videoId ->
-                                     CreateYouTubePlayer videoId volume
-                                   }
+  , eval: H.mkEval $ H.defaultEval
+    { handleAction = handleAction
+    , handleQuery = handleQuery
+    , initialize = Just CreateYouTubePlayer
+    }
   }
 
 handleQuery
   :: forall a slots m
   .  MonadAff m
-  => PlayerId
-  -> Query a
+  => Query a
   -> H.HalogenM State Action slots Message m (Maybe a)
-handleQuery playerId (SetVolume volume a) = do
-  H.gets _.player >>= traverse_ \player ->
-    liftEffect $ setVolume player volume
-  setPlayerOpacity playerId volume
+handleQuery (SetVolume volume a) = do
+  H.modify_ _ { volume = volume }
+  updatePlayerVolume
+  updatePlayerOpacity
   pure $ Just a
-handleQuery playerId (StartVideo videoId a) = do
+handleQuery (StartVideo videoId a) = do
   state <- H.get
   case state.player of
-    Nothing -> createYouTubePlayer playerId videoId state.volume
+    Nothing -> createYouTubePlayer videoId
     Just player -> do
       liftEffect $ loadVideoById player videoId
       title <- liftAff $ loadVideoTitle videoId
       H.raise (SetTitle title)
   pure $ Just a
-handleQuery _ (KillPlayer a) = do
-  H.gets _.player >>= traverse_ \player -> do
-    liftEffect $ destroyPlayer player
+handleQuery (KillPlayer a) = do
+  H.gets _.player >>= traverse_ (liftEffect <<< destroyPlayer)
   pure $ Just a
-handleQuery _ (PauseVideo a) = do
-  H.gets _.player >>= traverse_
-    (liftEffect <<< pausePlayer)
+handleQuery (PauseVideo a) = do
+  H.gets _.player >>= traverse_ (liftEffect <<< pausePlayer)
   pure $ Just a
-handleQuery _ (ResumeVideo a) = do
-  H.gets _.player >>= traverse_
-    (liftEffect <<< resumePlayer)
+handleQuery (ResumeVideo a) = do
+  H.gets _.player >>= traverse_ (liftEffect <<< resumePlayer)
   pure $ Just a
-handleQuery playerId (UpdateOpacity opacity a) = do
+handleQuery (UpdateOpacity opacity a) = do
   H.modify_ _ { opacity = opacity }
-  H.gets _.player >>= traverse (liftEffect <<< getVolume)
-    >>= traverse_ (setPlayerOpacity playerId)
+  updatePlayerOpacity
   pure $ Just a
 
-setPlayerOpacity
+updatePlayerOpacity
   :: forall slots m
   .  MonadAff m
-  => PlayerId
-  -> Volume
-  -> H.HalogenM State Action slots Message m Unit
-setPlayerOpacity playerId volume = do
-  opacity <- H.gets _.opacity
-  liftEffect $ setOpacity (playerIdToElementId playerId)
-    (Int.toNumber (volume * opacity) / 10000.0)
+  => H.HalogenM State Action slots Message m Unit
+updatePlayerOpacity = do
+  { playerId, volume, opacity } <- H.get
+  let
+    realOpacity = Int.toNumber (volume * opacity) / 10000.0
+  liftEffect $ setOpacity (playerIdToElementId playerId) realOpacity
 
-initialState :: forall i. i -> State
-initialState _ = { player: Nothing, bgTask: Nothing, volume: 0, opacity: 100 }
+updatePlayerVolume
+  :: forall slots m
+  .  MonadAff m
+  => H.HalogenM State Action slots Message m Unit
+updatePlayerVolume = do
+  { volume } <- H.get
+  H.gets _.player >>= traverse_ \player -> do
+    liftEffect $ setVolume player volume
+
+initialState :: PlayerId -> EmbedInit -> State
+initialState playerId { videoId, volume, opacity } =
+  { player: Nothing
+  , bgTask: Nothing
+  , volume
+  , opacity
+  , videoId
+  , playerId
+  }
 
 render :: forall cs m. PlayerId -> State -> H.ComponentHTML Action cs m
 render playerId _state =
@@ -151,10 +169,10 @@ render playerId _state =
 handleAction
   :: forall m cs
   .  MonadAff m
-  => PlayerId -> Action -> H.HalogenM State Action cs Message m Unit
-handleAction playerId = case _ of
-  CreateYouTubePlayer videoId volume -> do
-    createYouTubePlayer playerId videoId volume
+  => Action -> H.HalogenM State Action cs Message m Unit
+handleAction = case _ of
+  CreateYouTubePlayer -> do
+    H.gets _.videoId >>= createYouTubePlayer
   DestroyPlayer -> do
     H.gets _.player >>= traverse_ \player -> do
       liftEffect $ destroyPlayer player
@@ -163,21 +181,19 @@ handleAction playerId = case _ of
 createYouTubePlayer
   :: forall cs m
   .  MonadAff m
-  => PlayerId
-  -> VideoId
-  -> Volume
+  => VideoId
   -> H.HalogenM State Action cs Message m Unit
-createYouTubePlayer playerId videoId volume = do
+createYouTubePlayer videoId = do
+  { volume, playerId } <- H.get
   player <- createPlayerElement playerId videoId volume
-  setPlayerOpacity playerId volume
+  updatePlayerOpacity
   forkId <- H.fork do
     forever do
       liftAff $ delay $ wrap 500.0
       newVolume <- liftEffect $ getVolume player
       oldVolume <- H.gets (_.volume)
       when (oldVolume /= newVolume) do
-        H.raise (UpdateVolume newVolume)
-        H.modify_ \state -> state { volume = newVolume }
+        liftEffect $ setVolume player oldVolume
   H.modify_ \state -> state { player = Just player
                             , bgTask = Just forkId
                             }

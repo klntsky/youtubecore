@@ -81,10 +81,12 @@ type ChildSlots =
   , volumeControl :: VolumeControl.Slot Int
   )
 
+type URIHash = String
+
 component
-  :: forall i o m
+  :: forall o m
   .  MonadAff m
-  => H.Component Query i o m
+  => H.Component Query URIHash o m
 component =
   H.mkComponent
     { initialState
@@ -96,8 +98,14 @@ component =
       }
     }
 
-initialState :: forall i. i -> State
-initialState _ = { videos: Map.empty, lastId: 0 }
+initialState :: URIHash -> State
+initialState hash =
+  case mbRoute of
+    Nothing -> defaultState
+    Just route -> applyRoute route defaultState
+  where
+    mbRoute = Route.parse hash
+    defaultState = { videos: Map.empty, lastId: 0 }
 
 render
   :: forall m
@@ -142,7 +150,7 @@ renderVideo
   :: forall m
   .  MonadAff m
   => Int -> VideoState -> H.ComponentHTML Action ChildSlots m
-renderVideo idx {videoId, settings} =
+renderVideo idx { opacity, videoId, settings } =
   HH.div
   [ HP.ref (wrap $ show idx)
   , HP.class_ (wrap "video-container")
@@ -153,8 +161,11 @@ renderVideo idx {videoId, settings} =
        Left _ -> HH.text ""
        Right validVideoId ->
          HH.slot _embeds idx
-         (YouTubeEmbed.mkComponent idx (Just validVideoId) (NEA.head settings).volume)
-         validVideoId
+         (YouTubeEmbed.mkComponent idx)
+         { videoId: validVideoId
+         , volume: (NEA.head settings).volume
+         , opacity
+         }
          (HandleEmbedMessage idx)
   ]
 
@@ -175,10 +186,6 @@ renderMixer state = HH.div
     ]
   ]
 
--- | Mute by default
-initialVolume :: Volume
-initialVolume = 0
-
 renderMixerEntry
   :: forall m
   .  MonadAff m
@@ -186,7 +193,7 @@ renderMixerEntry
   -> VideoState
   -> Array (H.ComponentHTML Action ChildSlots m)
 renderMixerEntry _idx { deleted: true } = []
-renderMixerEntry idx videoState =
+renderMixerEntry idx videoState@{ settings, opacity } =
   [ HH.tr_
     [ HH.td
       [ HP.class_ (wrap "mixer-video-input-container") ]
@@ -205,7 +212,9 @@ renderMixerEntry idx videoState =
       ]
     , HH.td
       [ HP.rowSpan 2 ]
-      [ HH.slot _volumeControl idx VolumeControl.component initialVolume (HandleVolumeControl idx)
+      [ HH.slot _volumeControl idx VolumeControl.component
+        { settings, opacity }
+        (HandleVolumeControl idx)
       ]
     ]
   , HH.tr_
@@ -271,39 +280,14 @@ handleAction = case _ of
       }
     updateURL
 
-  -- ChangeVolume videoIndex newVolumeStr -> do
-  --   changeVolume videoIndex newVolumeStr
-
-  -- ChangeVolumeMouseMove videoIndex eventTarget -> do
-  --   let
-  --     mbInputElement =
-  --       DOM.Element.fromEventTarget eventTarget >>= HTMLInputElement.fromElement
-  --   case mbInputElement of
-  --     Nothing -> liftEffect $ Console.log "Failed to update volume"
-  --     _ -> pure unit
-  --   for_ mbInputElement \input -> do
-  --     liftEffect (HTMLInputElement.value input) >>= changeVolume videoIndex
-
-  HandleEmbedMessage videoIndex msg ->
-    case msg of
-
-      YouTubeEmbed.UpdateVolume newVolume -> do
-        pure unit
-        -- isPlaying <- H.query _sliders videoIndex
-        --   (H.mkRequest  (RecordableSlider.SetValueFromPlayer newVolume))
-        -- H.modify_ \state -> state
-        --   { videos =
-        --        Map.update (Just <<< _ { volume = newVolume }) videoIndex state.videos }
-        -- when (isPlaying == Just false) updateURL
-
-      YouTubeEmbed.SetTitle newTitle -> do
-        H.modify_ \state ->
-          state { videos =
-                     Map.update
-                     (Just <<< _ { title = newTitle })
-                     videoIndex
-                     state.videos
-                }
+  HandleEmbedMessage videoIndex (YouTubeEmbed.SetTitle newTitle) -> do
+    H.modify_ \state ->
+      state { videos =
+                 Map.update
+                 (Just <<< _ { title = newTitle })
+                 videoIndex
+                 state.videos
+            }
 
   HandleVolumeControl videoIndex msg -> do
     case msg of
@@ -320,7 +304,7 @@ handleAction = case _ of
           RecordableSlider.FromPlayback -> do
             pure unit
 
-      VolumeControl.UpdateRecordingStates state@{ settings, opacity } -> do
+      VolumeControl.UpdateRecordingStates { settings, opacity } -> do
         H.modify_ $
           (_videos <<< ix videoIndex <<< _settings .~ settings) >>>
           (_videos <<< ix videoIndex <<< _opacity .~ opacity)
