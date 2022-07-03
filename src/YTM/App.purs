@@ -72,6 +72,7 @@ data Action
 data Query a
   = UpdateFromURIHash String a
   -- ^ Load state from router. Only happens on startup
+  | UpdateWindowSize Int Int a
 
 -- index of a video in the State array
 type VideoIndex = Int
@@ -396,6 +397,16 @@ handleQuery (UpdateFromURIHash hash a) = do
             { settings: videoParams.settings
             , opacity: videoParams.opacity }
   pure $ Just a
+handleQuery (UpdateWindowSize width height a) = do
+  getExistingPlayerIds >>= traverse_ \ix -> do
+    H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize
+      (minCap 300 $ width - 750)
+      (minCap 300 $ height - 50)
+  pure $ Just a
+  where
+    minCap cap x
+      | x < cap = cap
+      | otherwise = x
 
 applyRoute :: Route.Route -> State -> State
 applyRoute route state =

@@ -43,6 +43,10 @@ exports.setOpacity = elementId => opacity => () => {
     document.getElementById(elementId).parentNode.style.opacity = opacity;
 };
 
+exports.setSize = player => width => height => () => {
+    player.setSize(width, height);
+};
+
 exports.destroyPlayer = player => () => {
     console.log('destroying', player._my_elementId, player._my_videoId);
     player.destroy();

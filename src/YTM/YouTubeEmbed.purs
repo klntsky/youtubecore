@@ -53,6 +53,8 @@ foreign import getVolume :: YouTubePlayer -> Effect Volume
 
 foreign import setOpacity :: ElementId -> Number -> Effect Unit
 
+foreign import setSize :: YouTubePlayer -> Int -> Int -> Effect Unit
+
 loadVideoTitle :: VideoId -> Aff VideoTitle
 loadVideoTitle =
   map (fromMaybe "[EMBEDDING NOT ALLOWED]") <<< toAffE <<< loadVideoTitle_ Just Nothing
@@ -67,6 +69,7 @@ data Query a
   | ResumeVideo a
   | KillPlayer a
   | UpdateOpacity Opacity a
+  | UpdatePlayerSize Int Int a
 
 -- Что мы отправляем наружу?
 data Message = SetTitle String
@@ -127,6 +130,10 @@ handleQuery (ResumeVideo a) = do
 handleQuery (UpdateOpacity opacity a) = do
   H.modify_ _ { opacity = opacity }
   updatePlayerOpacity
+  pure $ Just a
+handleQuery (UpdatePlayerSize width height a) = do
+  H.gets _.player >>= traverse_ \player -> do
+    liftEffect $ setSize player width height
   pure $ Just a
 
 updatePlayerOpacity
