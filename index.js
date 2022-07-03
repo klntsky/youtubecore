@@ -11886,10 +11886,10 @@ var PS = {};
       };
       if (state.recorderState instanceof Inactive) {
           if (state.playbackState instanceof PlaybackPlaying) {
-              return Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("playback-button")), Halogen_HTML_Events.onClick(Data_Function["const"](PlaybackPause.value)) ])([ Halogen_HTML_Core.text("\u23f8") ]);
+              return Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("playback-button")), Halogen_HTML_Properties.title("Pause automation playback"), Halogen_HTML_Events.onClick(Data_Function["const"](PlaybackPause.value)) ])([ Halogen_HTML_Core.text("\u23f8") ]);
           };
           if (state.playbackState instanceof PlaybackPaused && state.playbackState.value0 instanceof Data_Maybe.Just) {
-              return Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("playback-button")), Halogen_HTML_Events.onClick(Data_Function["const"](PlaybackResume.value)) ])([ Halogen_HTML_Core.text("\ud83d\udf82") ]);
+              return Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("playback-button")), Halogen_HTML_Properties.title("Resume automation playback"), Halogen_HTML_Events.onClick(Data_Function["const"](PlaybackResume.value)) ])([ Halogen_HTML_Core.text("\ud83d\udf82") ]);
           };
           if (state.playbackState instanceof PlaybackPaused && state.playbackState.value0 instanceof Data_Maybe.Nothing) {
               return Halogen_HTML_Core.text("");
@@ -11897,9 +11897,9 @@ var PS = {};
           if (state.playbackState instanceof PlaybackReady) {
               return Halogen_HTML_Core.text("");
           };
-          throw new Error("Failed pattern match at YTM.RecordableSlider (line 207, column 7 - line 220, column 38): " + [ state.playbackState.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.RecordableSlider (line 207, column 7 - line 222, column 38): " + [ state.playbackState.constructor.name ]);
       };
-      throw new Error("Failed pattern match at YTM.RecordableSlider (line 203, column 3 - line 220, column 38): " + [ state.recorderState.constructor.name ]);
+      throw new Error("Failed pattern match at YTM.RecordableSlider (line 203, column 3 - line 222, column 38): " + [ state.recorderState.constructor.name ]);
   };
   var render = function (state) {
       return Halogen_HTML_Elements.table_([ Halogen_HTML_Elements.tr_([ Halogen_HTML_Elements.td([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("controller-title")) ])([ Halogen_HTML_Core.text(state.title) ]), Halogen_HTML_Elements.td_([ renderSlider(state) ]), Halogen_HTML_Elements.td_([ renderRecorderButton(state) ]), Halogen_HTML_Elements.td_([ renderPlaybackButton(state) ]) ]) ]);
@@ -11979,7 +11979,7 @@ var PS = {};
               if (v.recording instanceof Data_Maybe.Just) {
                   return new PlaybackReady(v.recording.value0);
               };
-              throw new Error("Failed pattern match at YTM.RecordableSlider (line 127, column 20 - line 129, column 46): " + [ v.recording.constructor.name ]);
+              throw new Error("Failed pattern match at YTM.RecordableSlider (line 127, column 20 - line 129, column 34): " + [ v.recording.constructor.name ]);
           })(),
           lastSentValue: v.value,
           lastAmplitude: v.amplitude,
@@ -12022,7 +12022,7 @@ var PS = {};
                           if (state.playbackState instanceof PlaybackReady) {
                               return false;
                           };
-                          throw new Error("Failed pattern match at YTM.RecordableSlider (line 381, column 17 - line 384, column 31): " + [ state.playbackState.constructor.name ]);
+                          throw new Error("Failed pattern match at YTM.RecordableSlider (line 382, column 17 - line 385, column 31): " + [ state.playbackState.constructor.name ]);
                       })();
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1(isPlaying)));
                   });
@@ -12071,7 +12071,7 @@ var PS = {};
                   return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1));
               });
           };
-          throw new Error("Failed pattern match at YTM.RecordableSlider (line 368, column 1 - line 372, column 55): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.RecordableSlider (line 369, column 1 - line 373, column 55): " + [ v.constructor.name ]);
       };
   };
   var handleAction = function (dictMonadAff) {
@@ -12263,7 +12263,7 @@ var PS = {};
                   });
               });
           };
-          throw new Error("Failed pattern match at YTM.RecordableSlider (line 226, column 16 - line 310, column 38): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.RecordableSlider (line 228, column 16 - line 311, column 38): " + [ v.constructor.name ]);
       };
   };
   var component = function (dictMonadAff) {
