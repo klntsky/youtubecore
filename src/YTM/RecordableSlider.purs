@@ -246,7 +246,6 @@ handleAction = case _ of
         value <- getValueFromEvent mouseEvent
         H.modify_
           _ { recorderState =
-                 -- TODO: remove one allocation by eliminating a product type?
                  Recording startTime (List.singleton { relTime: wrap 0.0, value: value })
             , playbackState = PlaybackPaused Nothing
             }
