@@ -13824,8 +13824,8 @@ var PS = {};
           window.dbg[elementId] = element;
 
           const player = new YT.Player(element, {
-              height: size.height,
-              width: size.width,
+              height: size.videoHeight,
+              width: size.videoWidth,
               videoId: videoId,
               playerVars: {
                   'playsinline': 1
@@ -14459,6 +14459,31 @@ var PS = {};
       NoOp.value = new NoOp();
       return NoOp;
   })();
+  var toVideoSize = function (isFullscreen) {
+      return function (v) {
+          var minCap = function (cap) {
+              return function (x) {
+                  if (x < cap) {
+                      return cap;
+                  };
+                  if (Data_Boolean.otherwise) {
+                      return x;
+                  };
+                  throw new Error("Failed pattern match at YTM.App (line 458, column 5 - line 460, column 22): " + [ cap.constructor.name, x.constructor.name ]);
+              };
+          };
+          var v1 = (function () {
+              if (isFullscreen) {
+                  return new Data_Tuple.Tuple(minCap(300)(v.width), minCap(300)(v.height));
+              };
+              return new Data_Tuple.Tuple(minCap(300)(v.width - 750 | 0), minCap(300)(v.height - 50 | 0));
+          })();
+          return {
+              videoWidth: v1.value0,
+              videoHeight: v1.value1
+          };
+      };
+  };
   var renderHeader = Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("header") ])([ Halogen_HTML_Elements.span([ Halogen_HTML_Properties.id("header-title") ])([ Halogen_HTML_Core.text("YouTubeCore Player") ]), Halogen_HTML_Elements.span([ Halogen_HTML_Properties.id("player-controls") ])([ Halogen_HTML_Elements.span([ Halogen_HTML_Properties.id("play-button"), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("player-button")), Halogen_HTML_Events.onClick(Data_Function["const"](StartVideos.value)) ])([ Halogen_HTML_Core.text("PLAY") ]), Halogen_HTML_Elements.span([ Halogen_HTML_Properties.id("pause-button"), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("player-button")), Halogen_HTML_Events.onClick(Data_Function["const"](PauseVideos.value)) ])([ Halogen_HTML_Core.text("PAUSE") ]), Halogen_HTML_Elements.span([ Halogen_HTML_Properties.id("fullscreen-button"), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("player-button")), Halogen_HTML_Events.onClick(Data_Function["const"](FullScreen.value)) ])([ Halogen_HTML_Core.text("FULLSCREEN") ]) ]) ]);
   var getRoute = function (v) {
       return Data_List.fromFoldable(Data_Foldable.foldableArray)(Data_Foldable.fold(Data_List_Types.foldableList)(Data_Monoid.monoidArray)(Data_Functor.mapFlipped(Data_List_Types.functorList)(Data_Map_Internal.values(v.videos))(function (video) {
@@ -14481,17 +14506,17 @@ var PS = {};
   };
   var getExistingPlayerIds = function (dictMonadAff) {
       return Data_Functor.mapFlipped(Halogen_Query_HalogenM.functorHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))((function () {
-          var $147 = Data_Array.mapMaybe(function (v) {
+          var $170 = Data_Array.mapMaybe(function (v) {
               if (v.value1.deleted) {
                   return Data_Maybe.Nothing.value;
               };
               return new Data_Maybe.Just(v.value0);
           });
-          var $148 = Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray);
-          return function ($149) {
-              return $147($148((function (v) {
+          var $171 = Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray);
+          return function ($172) {
+              return $170($171((function (v) {
                   return v.videos;
-              })($149)));
+              })($172)));
           };
       })());
   };
@@ -14598,17 +14623,88 @@ var PS = {};
       }
   })()()(Type_Proxy["Proxy"].value);
   var _embeds = Type_Proxy["Proxy"].value;
+  var renderVideo = function (dictMonadAff) {
+      return function (v) {
+          return function (idx) {
+              return function (v1) {
+                  return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.ref(Data_Newtype.wrap()(Data_Show.show(Data_Show.showInt)(idx))), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("video-container")), Halogen_HTML_Properties.style("opacity: " + Data_Show.show(Data_Show.showNumber)(Data_Int.toNumber(100) / 100.0)), Halogen_HTML_Properties.id("tmp-" + Data_Show.show(Data_Show.showInt)(idx)) ])([ (function () {
+                      if (v1.videoId instanceof Data_Either.Left) {
+                          return Halogen_HTML_Core.text("");
+                      };
+                      if (v1.videoId instanceof Data_Either.Right) {
+                          return Halogen_HTML.slot()({
+                              reflectSymbol: function () {
+                                  return "embeds";
+                              }
+                          })(Data_Ord.ordInt)(_embeds)(idx)(YTM_YouTubeEmbed.mkComponent(dictMonadAff)(idx))({
+                              videoId: v1.videoId.value0,
+                              volume: (Data_Array_NonEmpty.head(v1.settings)).volume,
+                              opacity: v1.opacity,
+                              size: toVideoSize(v.fullscreen)(v.size)
+                          })(HandleEmbedMessage.create(idx));
+                      };
+                      throw new Error("Failed pattern match at YTM.App (line 187, column 5 - line 197, column 34): " + [ v1.videoId.constructor.name ]);
+                  })() ]);
+              };
+          };
+      };
+  };
+  var renderVideos = function (dictMonadAff) {
+      return function (state) {
+          return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("videos-container") ])(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(renderVideo(dictMonadAff)(state)))(Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray)(state.videos)));
+      };
+  };
+  var render = function (dictMonadAff) {
+      return function (state) {
+          return Halogen_HTML_Elements.div_([ renderHeader, Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("flex-container") ])([ renderMixer(dictMonadAff)(state), renderVideos(dictMonadAff)(state) ]) ]);
+      };
+  };
+  var updateWindowSize = function (dictMonadAff) {
+      return function (width) {
+          return function (height) {
+              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v) {
+                  return v.fullscreen;
+              }))(function (isFullscreen) {
+                  var v = toVideoSize(isFullscreen)({
+                      width: width,
+                      height: height
+                  });
+                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
+                      var $94 = {};
+                      for (var $95 in v1) {
+                          if ({}.hasOwnProperty.call(v1, $95)) {
+                              $94[$95] = v1[$95];
+                          };
+                      };
+                      $94.size = {
+                          width: width,
+                          height: height
+                      };
+                      return $94;
+                  }))(function () {
+                      return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(getExistingPlayerIds(dictMonadAff))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(function (ix) {
+                          return Halogen_Query.tell()({
+                              reflectSymbol: function () {
+                                  return "embeds";
+                              }
+                          })(Data_Ord.ordInt)(_embeds)(ix)(YTM_YouTubeEmbed.UpdatePlayerSize.create(v.videoWidth)(v.videoHeight));
+                      }));
+                  });
+              });
+          };
+      };
+  };
   var handleAction = function (dictMonadAff) {
       return function (v) {
           if (v instanceof AddVideo) {
               return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                  var $65 = {};
-                  for (var $66 in state) {
-                      if ({}.hasOwnProperty.call(state, $66)) {
-                          $65[$66] = state[$66];
+                  var $100 = {};
+                  for (var $101 in state) {
+                      if ({}.hasOwnProperty.call(state, $101)) {
+                          $100[$101] = state[$101];
                       };
                   };
-                  $65.videos = Data_Map_Internal.insert(Data_Ord.ordInt)(state.lastId)({
+                  $100.videos = Data_Map_Internal.insert(Data_Ord.ordInt)(state.lastId)({
                       videoId: new Data_Either.Left(""),
                       title: "",
                       deleted: false,
@@ -14627,8 +14723,8 @@ var PS = {};
                       } ])),
                       opacity: 100
                   })(state.videos);
-                  $65.lastId = state.lastId + 1 | 0;
-                  return $65;
+                  $100.lastId = state.lastId + 1 | 0;
+                  return $100;
               });
           };
           if (v instanceof RemoveVideo) {
@@ -14639,25 +14735,25 @@ var PS = {};
               })(Data_Ord.ordInt)(_embeds)(v.value0)(YTM_YouTubeEmbed.KillPlayer.create))(function () {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Effect_Aff.delay(Data_Newtype.wrap()(1.0))))(function () {
                       return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                          var $71 = {};
-                          for (var $72 in state) {
-                              if ({}.hasOwnProperty.call(state, $72)) {
-                                  $71[$72] = state[$72];
+                          var $106 = {};
+                          for (var $107 in state) {
+                              if ({}.hasOwnProperty.call(state, $107)) {
+                                  $106[$107] = state[$107];
                               };
                           };
-                          $71.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function (v2) {
+                          $106.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function (v2) {
                               return Control_Applicative.pure(Data_Maybe.applicativeMaybe)((function () {
-                                  var $68 = {};
-                                  for (var $69 in v2) {
-                                      if ({}.hasOwnProperty.call(v2, $69)) {
-                                          $68[$69] = v2[$69];
+                                  var $103 = {};
+                                  for (var $104 in v2) {
+                                      if ({}.hasOwnProperty.call(v2, $104)) {
+                                          $103[$104] = v2[$104];
                                       };
                                   };
-                                  $68.deleted = true;
-                                  return $68;
+                                  $103.deleted = true;
+                                  return $103;
                               })());
                           })(v.value0)(state.videos);
-                          return $71;
+                          return $106;
                       }))(function () {
                           return updateURL(dictMonadAff);
                       });
@@ -14666,25 +14762,25 @@ var PS = {};
           };
           if (v instanceof HandleEmbedMessage) {
               return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                  var $78 = {};
-                  for (var $79 in state) {
-                      if ({}.hasOwnProperty.call(state, $79)) {
-                          $78[$79] = state[$79];
+                  var $113 = {};
+                  for (var $114 in state) {
+                      if ({}.hasOwnProperty.call(state, $114)) {
+                          $113[$114] = state[$114];
                       };
                   };
-                  $78.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($150) {
+                  $113.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($173) {
                       return Data_Maybe.Just.create((function (v2) {
-                          var $75 = {};
-                          for (var $76 in v2) {
-                              if ({}.hasOwnProperty.call(v2, $76)) {
-                                  $75[$76] = v2[$76];
+                          var $110 = {};
+                          for (var $111 in v2) {
+                              if ({}.hasOwnProperty.call(v2, $111)) {
+                                  $110[$111] = v2[$111];
                               };
                           };
-                          $75.title = v.value1.value0;
-                          return $75;
-                      })($150));
+                          $110.title = v.value1.value0;
+                          return $110;
+                      })($173));
                   })(v.value0)(state.videos);
-                  return $78;
+                  return $113;
               });
           };
           if (v instanceof HandleVolumeControl) {
@@ -14705,24 +14801,24 @@ var PS = {};
               };
               if (v.value1 instanceof YTM_VolumeControl.UpdateRecordingStates) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)((function () {
-                      var $151 = Data_Lens_Setter.set((function () {
-                          var $154 = _videos(Data_Profunctor_Strong.strongFn);
-                          var $155 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                          var $156 = YTM_VolumeControl["_opacity"](Data_Profunctor_Strong.strongFn);
-                          return function ($157) {
-                              return $154($155($156($157)));
+                      var $174 = Data_Lens_Setter.set((function () {
+                          var $177 = _videos(Data_Profunctor_Strong.strongFn);
+                          var $178 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                          var $179 = YTM_VolumeControl["_opacity"](Data_Profunctor_Strong.strongFn);
+                          return function ($180) {
+                              return $177($178($179($180)));
                           };
                       })())(v.value1.value0.opacity);
-                      var $152 = Data_Lens_Setter.set((function () {
-                          var $158 = _videos(Data_Profunctor_Strong.strongFn);
-                          var $159 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                          var $160 = _settings(Data_Profunctor_Strong.strongFn);
-                          return function ($161) {
-                              return $158($159($160($161)));
+                      var $175 = Data_Lens_Setter.set((function () {
+                          var $181 = _videos(Data_Profunctor_Strong.strongFn);
+                          var $182 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                          var $183 = _settings(Data_Profunctor_Strong.strongFn);
+                          return function ($184) {
+                              return $181($182($183($184)));
                           };
                       })())(v.value1.value0.settings);
-                      return function ($153) {
-                          return $151($152($153));
+                      return function ($176) {
+                          return $174($175($176));
                       };
                   })()))(function () {
                       return updateURL(dictMonadAff);
@@ -14741,48 +14837,48 @@ var PS = {};
               var v1 = YTM_VideoId.parseVideoId(v.value1);
               if (v1 instanceof Data_Either.Left) {
                   return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                      var $98 = {};
-                      for (var $99 in state) {
-                          if ({}.hasOwnProperty.call(state, $99)) {
-                              $98[$99] = state[$99];
+                      var $133 = {};
+                      for (var $134 in state) {
+                          if ({}.hasOwnProperty.call(state, $134)) {
+                              $133[$134] = state[$134];
                           };
                       };
-                      $98.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($162) {
+                      $133.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($185) {
                           return Data_Maybe.Just.create((function (v3) {
-                              var $95 = {};
-                              for (var $96 in v3) {
-                                  if ({}.hasOwnProperty.call(v3, $96)) {
-                                      $95[$96] = v3[$96];
+                              var $130 = {};
+                              for (var $131 in v3) {
+                                  if ({}.hasOwnProperty.call(v3, $131)) {
+                                      $130[$131] = v3[$131];
                                   };
                               };
-                              $95.videoId = new Data_Either.Left(v1.value0);
-                              return $95;
-                          })($162));
+                              $130.videoId = new Data_Either.Left(v1.value0);
+                              return $130;
+                          })($185));
                       })(v.value0)(state.videos);
-                      return $98;
+                      return $133;
                   });
               };
               if (v1 instanceof Data_Either.Right) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                      var $105 = {};
-                      for (var $106 in state) {
-                          if ({}.hasOwnProperty.call(state, $106)) {
-                              $105[$106] = state[$106];
+                      var $140 = {};
+                      for (var $141 in state) {
+                          if ({}.hasOwnProperty.call(state, $141)) {
+                              $140[$141] = state[$141];
                           };
                       };
-                      $105.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($163) {
+                      $140.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($186) {
                           return Data_Maybe.Just.create((function (v3) {
-                              var $102 = {};
-                              for (var $103 in v3) {
-                                  if ({}.hasOwnProperty.call(v3, $103)) {
-                                      $102[$103] = v3[$103];
+                              var $137 = {};
+                              for (var $138 in v3) {
+                                  if ({}.hasOwnProperty.call(v3, $138)) {
+                                      $137[$138] = v3[$138];
                                   };
                               };
-                              $102.videoId = new Data_Either.Right(v1.value0);
-                              return $102;
-                          })($163));
+                              $137.videoId = new Data_Either.Right(v1.value0);
+                              return $137;
+                          })($186));
                       })(v.value0)(state.videos);
-                      return $105;
+                      return $140;
                   }))(function () {
                       return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Halogen_Query_HalogenM.query()({
                           reflectSymbol: function () {
@@ -14811,22 +14907,26 @@ var PS = {};
           };
           if (v instanceof FullScreen) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))($foreign.requestFullscreen))(function () {
-                  return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                      var $111 = {};
-                      for (var $112 in v1) {
-                          if ({}.hasOwnProperty.call(v1, $112)) {
-                              $111[$112] = v1[$112];
+                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Data_Functor.mapFlipped(Halogen_Query_HalogenM.functorHalogenM)(Control_Monad_State_Class.modify(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
+                      var $146 = {};
+                      for (var $147 in v1) {
+                          if ({}.hasOwnProperty.call(v1, $147)) {
+                              $146[$147] = v1[$147];
                           };
                       };
-                      $111.fullscreen = true;
-                      return $111;
+                      $146.fullscreen = true;
+                      return $146;
+                  }))(function (v1) {
+                      return v1.size;
+                  }))(function (v1) {
+                      return updateWindowSize(dictMonadAff)(v1.width)(v1.height);
                   });
               });
           };
           if (v instanceof NoOp) {
               return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Unit.unit);
           };
-          throw new Error("Failed pattern match at YTM.App (line 273, column 16 - line 375, column 20): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.App (line 273, column 16 - line 376, column 20): " + [ v.constructor.name ]);
       };
   };
   var handleQuery = function (dictMonadAff) {
@@ -14901,109 +15001,36 @@ var PS = {};
                               });
                           });
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 415, column 3 - line 430, column 45): " + [ mbRoute.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 416, column 3 - line 431, column 45): " + [ mbRoute.constructor.name ]);
                   })())(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1));
                   });
               });
           };
           if (v instanceof UpdateWindowSize) {
-              var minCap = function (cap) {
-                  return function (x) {
-                      if (x < cap) {
-                          return cap;
-                      };
-                      if (Data_Boolean.otherwise) {
-                          return x;
-                      };
-                      throw new Error("Failed pattern match at YTM.App (line 446, column 5 - line 448, column 22): " + [ cap.constructor.name, x.constructor.name ]);
-                  };
-              };
-              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                  return v1.fullscreen;
-              }))(function (isFullscreen) {
-                  var v1 = (function () {
-                      if (isFullscreen) {
-                          return new Data_Tuple.Tuple(minCap(300)(v.value0), minCap(300)(v.value1));
-                      };
-                      return new Data_Tuple.Tuple(minCap(300)(v.value0 - 750 | 0), minCap(300)(v.value1 - 50 | 0));
-                  })();
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
-                      var $126 = {};
-                      for (var $127 in v2) {
-                          if ({}.hasOwnProperty.call(v2, $127)) {
-                              $126[$127] = v2[$127];
-                          };
-                      };
-                      $126.size = {
-                          width: v1.value0,
-                          height: v1.value1
-                      };
-                      return $126;
-                  }))(function () {
-                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(getExistingPlayerIds(dictMonadAff))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(function (ix) {
-                          return Halogen_Query.tell()({
-                              reflectSymbol: function () {
-                                  return "embeds";
-                              }
-                          })(Data_Ord.ordInt)(_embeds)(ix)(YTM_YouTubeEmbed.UpdatePlayerSize.create(v1.value0)(v1.value1));
-                      })))(function () {
-                          return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value2));
-                      });
-                  });
+              return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(updateWindowSize(dictMonadAff)(v.value0)(v.value1))(function () {
+                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value2));
               });
           };
           if (v instanceof ExitFullscreen) {
-              return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                  var $134 = {};
-                  for (var $135 in v1) {
-                      if ({}.hasOwnProperty.call(v1, $135)) {
-                          $134[$135] = v1[$135];
+              return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Data_Functor.mapFlipped(Halogen_Query_HalogenM.functorHalogenM)(Control_Monad_State_Class.modify(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
+                  var $163 = {};
+                  for (var $164 in v1) {
+                      if ({}.hasOwnProperty.call(v1, $164)) {
+                          $163[$164] = v1[$164];
                       };
                   };
-                  $134.fullscreen = false;
-                  return $134;
-              }))(function () {
-                  return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value0));
+                  $163.fullscreen = false;
+                  return $163;
+              }))(function (v1) {
+                  return v1.size;
+              }))(function (v1) {
+                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(updateWindowSize(dictMonadAff)(v1.width)(v1.height))(function () {
+                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value0));
+                  });
               });
           };
-          throw new Error("Failed pattern match at YTM.App (line 405, column 1 - line 409, column 54): " + [ v.constructor.name ]);
-      };
-  };
-  var renderVideo = function (dictMonadAff) {
-      return function (size) {
-          return function (idx) {
-              return function (v) {
-                  return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.ref(Data_Newtype.wrap()(Data_Show.show(Data_Show.showInt)(idx))), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("video-container")), Halogen_HTML_Properties.style("opacity: " + Data_Show.show(Data_Show.showNumber)(Data_Int.toNumber(100) / 100.0)), Halogen_HTML_Properties.id("tmp-" + Data_Show.show(Data_Show.showInt)(idx)) ])([ (function () {
-                      if (v.videoId instanceof Data_Either.Left) {
-                          return Halogen_HTML_Core.text("");
-                      };
-                      if (v.videoId instanceof Data_Either.Right) {
-                          return Halogen_HTML.slot()({
-                              reflectSymbol: function () {
-                                  return "embeds";
-                              }
-                          })(Data_Ord.ordInt)(_embeds)(idx)(YTM_YouTubeEmbed.mkComponent(dictMonadAff)(idx))({
-                              videoId: v.videoId.value0,
-                              volume: (Data_Array_NonEmpty.head(v.settings)).volume,
-                              opacity: v.opacity,
-                              size: size
-                          })(HandleEmbedMessage.create(idx));
-                      };
-                      throw new Error("Failed pattern match at YTM.App (line 187, column 5 - line 197, column 34): " + [ v.videoId.constructor.name ]);
-                  })() ]);
-              };
-          };
-      };
-  };
-  var renderVideos = function (dictMonadAff) {
-      return function (state) {
-          return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("videos-container") ])(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(renderVideo(dictMonadAff)(state.size)))(Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray)(state.videos)));
-      };
-  };
-  var render = function (dictMonadAff) {
-      return function (state) {
-          return Halogen_HTML_Elements.div_([ renderHeader, Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("flex-container") ])([ renderMixer(dictMonadAff)(state), renderVideos(dictMonadAff)(state) ]) ]);
+          throw new Error("Failed pattern match at YTM.App (line 406, column 1 - line 410, column 54): " + [ v.constructor.name ]);
       };
   };
   var component = function (dictMonadAff) {
