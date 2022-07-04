@@ -167,17 +167,17 @@ renderVideos
   => State -> H.ComponentHTML Action ChildSlots m
 renderVideos state =
   HH.div [ HP.id "videos-container" ] $
-  map (uncurry (renderVideo state.size)) $
+  map (uncurry (renderVideo state)) $
   Map.toUnfoldable state.videos
 
 renderVideo
   :: forall m
   .  MonadAff m
-  => { width :: Int, height :: Int }
+  => State
   -> Int
   -> VideoState
   -> H.ComponentHTML Action ChildSlots m
-renderVideo size idx { opacity, videoId, settings } =
+renderVideo { size, fullscreen } idx { opacity, videoId, settings } =
   HH.div
   [ HP.ref (wrap $ show idx)
   , HP.class_ (wrap "video-container")
@@ -192,7 +192,7 @@ renderVideo size idx { opacity, videoId, settings } =
          { videoId: validVideoId
          , volume: (NEA.head settings).volume
          , opacity
-         , size
+         , size: toVideoSize fullscreen size
          }
          (HandleEmbedMessage idx)
   ]
@@ -370,7 +370,8 @@ handleAction = case _ of
 
   FullScreen -> do
     liftEffect requestFullscreen
-    H.modify_ _ { fullscreen = true }
+    { width, height } <- H.modify _ { fullscreen = true } <#> _.size
+    updateWindowSize width height
 
   NoOp -> pure unit
 
@@ -430,25 +431,41 @@ handleQuery (UpdateFromURIHash hash a) = do
             , opacity: videoParams.opacity }
   pure $ Just a
 handleQuery (UpdateWindowSize width height a) = do
+  updateWindowSize width height
+  pure $ Just a
+handleQuery (ExitFullscreen a) = do
+  { width, height } <- H.modify _ { fullscreen = false } <#> _.size
+  updateWindowSize width height
+  pure $ Just a
+
+updateWindowSize
+  :: forall m i
+  .  MonadAff m
+  => Int
+  -> Int
+  -> H.HalogenM State Action ChildSlots i m Unit
+updateWindowSize width height = do
   isFullscreen <- H.gets _.fullscreen
   let
-    realWidth /\ realHeight =
+    { videoWidth, videoHeight } = toVideoSize isFullscreen { width, height }
+  H.modify_ _ { size = { width, height } }
+  getExistingPlayerIds >>= traverse_ \ix -> do
+    H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize videoWidth videoHeight
+
+toVideoSize :: Boolean -> { width :: Int, height :: Int } -> { videoWidth :: Int, videoHeight :: Int }
+toVideoSize isFullscreen { width, height } =
+  let
+    minCap cap x
+      | x < cap = cap
+      | otherwise = x
+    videoWidth /\ videoHeight =
         if isFullscreen
         then
            minCap 300 width /\ minCap 300 height
         else
            minCap 300 (width - 750) /\ minCap 300 (height - 50)
-  H.modify_ _ { size = { width: realWidth, height: realHeight } }
-  getExistingPlayerIds >>= traverse_ \ix -> do
-    H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize realWidth realHeight
-  pure $ Just a
-  where
-    minCap cap x
-      | x < cap = cap
-      | otherwise = x
-handleQuery (ExitFullscreen a) = do
-  H.modify_ _ { fullscreen = false }
-  pure $ Just a
+  in { videoWidth, videoHeight }
+
 
 applyRoute :: Route.Route -> State -> State
 applyRoute route state =

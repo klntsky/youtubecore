@@ -28,7 +28,7 @@ foreign import newYouTubePlayer
   :: ElementId
   -> VideoId
   -> Volume
-  -> { width :: Int, height :: Int }
+  -> { videoWidth :: Int, videoHeight :: Int }
   -> Effect YouTubePlayer
 
 type State =
@@ -39,8 +39,8 @@ type State =
   , opacity :: Opacity
   , videoId :: VideoId
   , size ::
-       { width :: Int
-       , height :: Int
+       { videoWidth :: Int
+       , videoHeight :: Int
        }
   }
 
@@ -92,8 +92,8 @@ type EmbedInit =
   , volume :: Volume
   , opacity :: Opacity
   , size ::
-       { width :: Int
-       , height :: Int
+       { videoWidth :: Int
+       , videoHeight :: Int
        }
   }
 

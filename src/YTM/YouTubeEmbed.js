@@ -9,8 +9,8 @@ exports.newYouTubePlayer =
         window.dbg[elementId] = element;
 
         const player = new YT.Player(element, {
-            height: size.height,
-            width: size.width,
+            height: size.videoHeight,
+            width: size.videoWidth,
             videoId: videoId,
             playerVars: {
                 'playsinline': 1
