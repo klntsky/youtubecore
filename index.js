@@ -13818,14 +13818,14 @@ var PS = {};
   window.dbg = { players: [] };
 
   exports.newYouTubePlayer =
-      elementId => videoId => volume => () => {
+      elementId => videoId => volume => size => () => {
           console.log('newYouTubePlayer', elementId, videoId);
           const element = document.getElementById(elementId);
           window.dbg[elementId] = element;
 
           const player = new YT.Player(element, {
-              height: '390',
-              width: '640',
+              height: size.height,
+              width: size.width,
               videoId: videoId,
               playerVars: {
                   'playsinline': 1
@@ -13847,7 +13847,6 @@ var PS = {};
                   }
               }
           });
-          player.setSize(1000, 700);
           player._my_videoId = videoId;
           player._my_elementId = elementId;
           window.dbg.players.push(player);
@@ -14070,10 +14069,10 @@ var PS = {};
       });
   };
   var loadVideoTitle = (function () {
-      var $65 = Data_Functor.map(Effect_Aff.functorAff)(Data_Maybe.fromMaybe("[EMBEDDING NOT ALLOWED]"));
-      var $66 = $foreign.loadVideoTitle_(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
-      return function ($67) {
-          return $65(Control_Promise.toAffE($66($67)));
+      var $67 = Data_Functor.map(Effect_Aff.functorAff)(Data_Maybe.fromMaybe("[EMBEDDING NOT ALLOWED]"));
+      var $68 = $foreign.loadVideoTitle_(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
+      return function ($69) {
+          return $67(Control_Promise.toAffE($68($69)));
       };
   })();
   var initialState = function (playerId) {
@@ -14084,7 +14083,8 @@ var PS = {};
               volume: v.volume,
               opacity: v.opacity,
               videoId: v.videoId,
-              playerId: playerId
+              playerId: playerId,
+              size: v.size
           };
       };
   };
@@ -14092,7 +14092,11 @@ var PS = {};
       return function (playerId) {
           return function (videoId) {
               return function (volume) {
-                  return Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))($foreign.newYouTubePlayer(playerIdToElementId(playerId))(videoId)(volume));
+                  return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v) {
+                      return v.size;
+                  }))(function (size) {
+                      return Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))($foreign.newYouTubePlayer(playerIdToElementId(playerId))(videoId)(volume)(size));
+                  });
               };
           };
       };
@@ -14112,15 +14116,15 @@ var PS = {};
                           });
                       }))))(function (forkId) {
                           return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                              var $38 = {};
-                              for (var $39 in state) {
-                                  if ({}.hasOwnProperty.call(state, $39)) {
-                                      $38[$39] = state[$39];
+                              var $40 = {};
+                              for (var $41 in state) {
+                                  if ({}.hasOwnProperty.call(state, $41)) {
+                                      $40[$41] = state[$41];
                                   };
                               };
-                              $38.player = new Data_Maybe.Just(player);
-                              $38.bgTask = new Data_Maybe.Just(forkId);
-                              return $38;
+                              $40.player = new Data_Maybe.Just(player);
+                              $40.bgTask = new Data_Maybe.Just(forkId);
+                              return $40;
                           }))(function () {
                               return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(loadVideoTitle(videoId)))(function (title) {
                                   return Halogen_Query_HalogenM.raise(new SetTitle(title));
@@ -14150,21 +14154,21 @@ var PS = {};
                   }))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableMaybe)(Halogen_Query_HalogenM.kill));
               });
           };
-          throw new Error("Failed pattern match at YTM.YouTubeEmbed (line 180, column 16 - line 186, column 41): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.YouTubeEmbed (line 195, column 16 - line 201, column 41): " + [ v.constructor.name ]);
       };
   };
   var handleQuery = function (dictMonadAff) {
       return function (v) {
           if (v instanceof SetVolume) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                  var $45 = {};
-                  for (var $46 in v1) {
-                      if ({}.hasOwnProperty.call(v1, $46)) {
-                          $45[$46] = v1[$46];
+                  var $47 = {};
+                  for (var $48 in v1) {
+                      if ({}.hasOwnProperty.call(v1, $48)) {
+                          $47[$48] = v1[$48];
                       };
                   };
-                  $45.volume = v.value0;
-                  return $45;
+                  $47.volume = v.value0;
+                  return $47;
               }))(function () {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(updatePlayerVolume(dictMonadAff))(function () {
                       return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(updatePlayerOpacity(dictMonadAff))(function () {
@@ -14186,7 +14190,7 @@ var PS = {};
                               });
                           });
                       };
-                      throw new Error("Failed pattern match at YTM.YouTubeEmbed (line 114, column 3 - line 119, column 31): " + [ state.player.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.YouTubeEmbed (line 128, column 3 - line 133, column 31): " + [ state.player.constructor.name ]);
                   })())(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1));
                   });
@@ -14196,9 +14200,9 @@ var PS = {};
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
                   return v1.player;
               }))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableMaybe)((function () {
-                  var $68 = Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()));
-                  return function ($69) {
-                      return $68($foreign.destroyPlayer($69));
+                  var $70 = Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()));
+                  return function ($71) {
+                      return $70($foreign.destroyPlayer($71));
                   };
               })())))(function () {
                   return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value0));
@@ -14208,9 +14212,9 @@ var PS = {};
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
                   return v1.player;
               }))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableMaybe)((function () {
-                  var $70 = Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()));
-                  return function ($71) {
-                      return $70($foreign.pausePlayer($71));
+                  var $72 = Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()));
+                  return function ($73) {
+                      return $72($foreign.pausePlayer($73));
                   };
               })())))(function () {
                   return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value0));
@@ -14220,9 +14224,9 @@ var PS = {};
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
                   return v1.player;
               }))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableMaybe)((function () {
-                  var $72 = Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()));
-                  return function ($73) {
-                      return $72($foreign.resumePlayer($73));
+                  var $74 = Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()));
+                  return function ($75) {
+                      return $74($foreign.resumePlayer($75));
                   };
               })())))(function () {
                   return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value0));
@@ -14230,14 +14234,14 @@ var PS = {};
           };
           if (v instanceof UpdateOpacity) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                  var $57 = {};
-                  for (var $58 in v1) {
-                      if ({}.hasOwnProperty.call(v1, $58)) {
-                          $57[$58] = v1[$58];
+                  var $59 = {};
+                  for (var $60 in v1) {
+                      if ({}.hasOwnProperty.call(v1, $60)) {
+                          $59[$60] = v1[$60];
                       };
                   };
-                  $57.opacity = v.value0;
-                  return $57;
+                  $59.opacity = v.value0;
+                  return $59;
               }))(function () {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(updatePlayerOpacity(dictMonadAff))(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1));
@@ -14253,7 +14257,7 @@ var PS = {};
                   return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value2));
               });
           };
-          throw new Error("Failed pattern match at YTM.YouTubeEmbed (line 102, column 1 - line 106, column 55): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.YouTubeEmbed (line 116, column 1 - line 120, column 55): " + [ v.constructor.name ]);
       };
   };
   var mkComponent = function (dictMonadAff) {
@@ -14477,17 +14481,17 @@ var PS = {};
   };
   var getExistingPlayerIds = function (dictMonadAff) {
       return Data_Functor.mapFlipped(Halogen_Query_HalogenM.functorHalogenM)(Control_Monad_State_Class.get(Halogen_Query_HalogenM.monadStateHalogenM))((function () {
-          var $138 = Data_Array.mapMaybe(function (v) {
+          var $147 = Data_Array.mapMaybe(function (v) {
               if (v.value1.deleted) {
                   return Data_Maybe.Nothing.value;
               };
               return new Data_Maybe.Just(v.value0);
           });
-          var $139 = Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray);
-          return function ($140) {
-              return $138($139((function (v) {
+          var $148 = Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray);
+          return function ($149) {
+              return $147($148((function (v) {
                   return v.videos;
-              })($140)));
+              })($149)));
           };
       })());
   };
@@ -14506,7 +14510,8 @@ var PS = {};
                   };
               })),
               lastId: Data_List.length(route) + state.lastId | 0,
-              fullscreen: state.fullscreen
+              fullscreen: state.fullscreen,
+              size: state.size
           };
       };
   };
@@ -14515,7 +14520,11 @@ var PS = {};
       var defaultState = {
           videos: Data_Map_Internal.empty,
           lastId: 0,
-          fullscreen: false
+          fullscreen: false,
+          size: {
+              width: 1024,
+              height: 768
+          }
       };
       if (mbRoute instanceof Data_Maybe.Nothing) {
           return defaultState;
@@ -14523,7 +14532,7 @@ var PS = {};
       if (mbRoute instanceof Data_Maybe.Just) {
           return applyRoute(mbRoute.value0)(defaultState);
       };
-      throw new Error("Failed pattern match at YTM.App (line 108, column 3 - line 110, column 48): " + [ mbRoute.constructor.name ]);
+      throw new Error("Failed pattern match at YTM.App (line 112, column 3 - line 114, column 48): " + [ mbRoute.constructor.name ]);
   };
   var _volumeControl = Type_Proxy["Proxy"].value;
   var renderMixerEntry = function (dictMonadAff) {
@@ -14540,7 +14549,7 @@ var PS = {};
                   if (Data_Boolean.otherwise) {
                       return v2.before + "\u2026";
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 249, column 7 - line 252, column 39): " + [ v2.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 267, column 7 - line 270, column 39): " + [ v2.constructor.name ]);
               })();
               return [ Halogen_HTML_Elements.tr_([ Halogen_HTML_Elements.td([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("mixer-video-input-container")) ])([ Halogen_HTML_Elements.input([ Halogen_HTML_Properties.type_(Halogen_HTML_Core.isPropInputType)(DOM_HTML_Indexed_InputType.InputText.value), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("mixer-video-input")), Halogen_HTML_Properties.placeholder("Video URL or ID"), Halogen_HTML_Properties.value((function () {
                   if (v1.videoId instanceof Data_Either.Left) {
@@ -14549,7 +14558,7 @@ var PS = {};
                   if (v1.videoId instanceof Data_Either.Right) {
                       return Data_Newtype.unwrap()(v1.videoId.value0);
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 214, column 20 - line 216, column 53): " + [ v1.videoId.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 232, column 20 - line 234, column 53): " + [ v1.videoId.constructor.name ]);
               })()), Halogen_HTML_Events.onValueChange(UpdateVideoId.create(v)) ]), Halogen_HTML_Elements.span([ Halogen_HTML_Events.onClick(function (v2) {
                   return new RemoveVideo(v);
               }), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("delete-button")) ])([ Halogen_HTML_Core.text("DELETE") ]) ]), Halogen_HTML_Elements.td([ Halogen_HTML_Properties.rowSpan(2) ])([ Halogen_HTML.slot()({
@@ -14566,7 +14575,7 @@ var PS = {};
                   if (v1.videoId instanceof Data_Either.Right) {
                       return Halogen_HTML_Elements.a([ Halogen_HTML_Properties.href("https://youtu.be/" + Data_Newtype.unwrap()(v1.videoId.value0)), Halogen_HTML_Properties.target("_blank"), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("video-link")) ])([ Halogen_HTML_Core.text(shortenedTitle) ]);
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 233, column 9 - line 241, column 40): " + [ v1.videoId.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 251, column 9 - line 259, column 40): " + [ v1.videoId.constructor.name ]);
               })() ]) ]), Halogen_HTML_Elements.tr([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("mixer-entry-interval")) ])([ Halogen_HTML_Elements.td([ Halogen_HTML_Properties.colSpan(2) ])([  ]) ]) ];
           };
       };
@@ -14593,13 +14602,13 @@ var PS = {};
       return function (v) {
           if (v instanceof AddVideo) {
               return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                  var $63 = {};
-                  for (var $64 in state) {
-                      if ({}.hasOwnProperty.call(state, $64)) {
-                          $63[$64] = state[$64];
+                  var $65 = {};
+                  for (var $66 in state) {
+                      if ({}.hasOwnProperty.call(state, $66)) {
+                          $65[$66] = state[$66];
                       };
                   };
-                  $63.videos = Data_Map_Internal.insert(Data_Ord.ordInt)(state.lastId)({
+                  $65.videos = Data_Map_Internal.insert(Data_Ord.ordInt)(state.lastId)({
                       videoId: new Data_Either.Left(""),
                       title: "",
                       deleted: false,
@@ -14618,8 +14627,8 @@ var PS = {};
                       } ])),
                       opacity: 100
                   })(state.videos);
-                  $63.lastId = state.lastId + 1 | 0;
-                  return $63;
+                  $65.lastId = state.lastId + 1 | 0;
+                  return $65;
               });
           };
           if (v instanceof RemoveVideo) {
@@ -14630,25 +14639,25 @@ var PS = {};
               })(Data_Ord.ordInt)(_embeds)(v.value0)(YTM_YouTubeEmbed.KillPlayer.create))(function () {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Aff_Class.liftAff(Halogen_Query_HalogenM.monadAffHalogenM(dictMonadAff))(Effect_Aff.delay(Data_Newtype.wrap()(1.0))))(function () {
                       return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                          var $69 = {};
-                          for (var $70 in state) {
-                              if ({}.hasOwnProperty.call(state, $70)) {
-                                  $69[$70] = state[$70];
+                          var $71 = {};
+                          for (var $72 in state) {
+                              if ({}.hasOwnProperty.call(state, $72)) {
+                                  $71[$72] = state[$72];
                               };
                           };
-                          $69.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function (v2) {
+                          $71.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function (v2) {
                               return Control_Applicative.pure(Data_Maybe.applicativeMaybe)((function () {
-                                  var $66 = {};
-                                  for (var $67 in v2) {
-                                      if ({}.hasOwnProperty.call(v2, $67)) {
-                                          $66[$67] = v2[$67];
+                                  var $68 = {};
+                                  for (var $69 in v2) {
+                                      if ({}.hasOwnProperty.call(v2, $69)) {
+                                          $68[$69] = v2[$69];
                                       };
                                   };
-                                  $66.deleted = true;
-                                  return $66;
+                                  $68.deleted = true;
+                                  return $68;
                               })());
                           })(v.value0)(state.videos);
-                          return $69;
+                          return $71;
                       }))(function () {
                           return updateURL(dictMonadAff);
                       });
@@ -14657,25 +14666,25 @@ var PS = {};
           };
           if (v instanceof HandleEmbedMessage) {
               return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                  var $76 = {};
-                  for (var $77 in state) {
-                      if ({}.hasOwnProperty.call(state, $77)) {
-                          $76[$77] = state[$77];
+                  var $78 = {};
+                  for (var $79 in state) {
+                      if ({}.hasOwnProperty.call(state, $79)) {
+                          $78[$79] = state[$79];
                       };
                   };
-                  $76.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($141) {
+                  $78.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($150) {
                       return Data_Maybe.Just.create((function (v2) {
-                          var $73 = {};
-                          for (var $74 in v2) {
-                              if ({}.hasOwnProperty.call(v2, $74)) {
-                                  $73[$74] = v2[$74];
+                          var $75 = {};
+                          for (var $76 in v2) {
+                              if ({}.hasOwnProperty.call(v2, $76)) {
+                                  $75[$76] = v2[$76];
                               };
                           };
-                          $73.title = v.value1.value0;
-                          return $73;
-                      })($141));
+                          $75.title = v.value1.value0;
+                          return $75;
+                      })($150));
                   })(v.value0)(state.videos);
-                  return $76;
+                  return $78;
               });
           };
           if (v instanceof HandleVolumeControl) {
@@ -14691,29 +14700,29 @@ var PS = {};
                       if (v.value1.value0 instanceof YTM_RecordableSlider.FromPlayback) {
                           return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Unit.unit);
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 309, column 9 - line 316, column 22): " + [ v.value1.value0.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 327, column 9 - line 334, column 22): " + [ v.value1.value0.constructor.name ]);
                   });
               };
               if (v.value1 instanceof YTM_VolumeControl.UpdateRecordingStates) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)((function () {
-                      var $142 = Data_Lens_Setter.set((function () {
-                          var $145 = _videos(Data_Profunctor_Strong.strongFn);
-                          var $146 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                          var $147 = YTM_VolumeControl["_opacity"](Data_Profunctor_Strong.strongFn);
-                          return function ($148) {
-                              return $145($146($147($148)));
+                      var $151 = Data_Lens_Setter.set((function () {
+                          var $154 = _videos(Data_Profunctor_Strong.strongFn);
+                          var $155 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                          var $156 = YTM_VolumeControl["_opacity"](Data_Profunctor_Strong.strongFn);
+                          return function ($157) {
+                              return $154($155($156($157)));
                           };
                       })())(v.value1.value0.opacity);
-                      var $143 = Data_Lens_Setter.set((function () {
-                          var $149 = _videos(Data_Profunctor_Strong.strongFn);
-                          var $150 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
-                          var $151 = _settings(Data_Profunctor_Strong.strongFn);
-                          return function ($152) {
-                              return $149($150($151($152)));
+                      var $152 = Data_Lens_Setter.set((function () {
+                          var $158 = _videos(Data_Profunctor_Strong.strongFn);
+                          var $159 = Data_Lens_Index.ix(Data_Lens_Index.indexMap(Data_Ord.ordInt))(v.value0)(Data_Profunctor_Strong.strongFn)(Data_Profunctor_Choice.choiceFn);
+                          var $160 = _settings(Data_Profunctor_Strong.strongFn);
+                          return function ($161) {
+                              return $158($159($160($161)));
                           };
                       })())(v.value1.value0.settings);
-                      return function ($144) {
-                          return $142($143($144));
+                      return function ($153) {
+                          return $151($152($153));
                       };
                   })()))(function () {
                       return updateURL(dictMonadAff);
@@ -14726,54 +14735,54 @@ var PS = {};
                       }
                   })(Data_Ord.ordInt)(_embeds)(v.value0)(Halogen_Query.mkTell(YTM_YouTubeEmbed.UpdateOpacity.create(v.value1.value0))));
               };
-              throw new Error("Failed pattern match at YTM.App (line 304, column 5 - line 325, column 90): " + [ v.value1.constructor.name ]);
+              throw new Error("Failed pattern match at YTM.App (line 322, column 5 - line 343, column 90): " + [ v.value1.constructor.name ]);
           };
           if (v instanceof UpdateVideoId) {
               var v1 = YTM_VideoId.parseVideoId(v.value1);
               if (v1 instanceof Data_Either.Left) {
                   return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                      var $96 = {};
-                      for (var $97 in state) {
-                          if ({}.hasOwnProperty.call(state, $97)) {
-                              $96[$97] = state[$97];
+                      var $98 = {};
+                      for (var $99 in state) {
+                          if ({}.hasOwnProperty.call(state, $99)) {
+                              $98[$99] = state[$99];
                           };
                       };
-                      $96.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($153) {
+                      $98.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($162) {
                           return Data_Maybe.Just.create((function (v3) {
-                              var $93 = {};
-                              for (var $94 in v3) {
-                                  if ({}.hasOwnProperty.call(v3, $94)) {
-                                      $93[$94] = v3[$94];
+                              var $95 = {};
+                              for (var $96 in v3) {
+                                  if ({}.hasOwnProperty.call(v3, $96)) {
+                                      $95[$96] = v3[$96];
                                   };
                               };
-                              $93.videoId = new Data_Either.Left(v1.value0);
-                              return $93;
-                          })($153));
+                              $95.videoId = new Data_Either.Left(v1.value0);
+                              return $95;
+                          })($162));
                       })(v.value0)(state.videos);
-                      return $96;
+                      return $98;
                   });
               };
               if (v1 instanceof Data_Either.Right) {
                   return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (state) {
-                      var $103 = {};
-                      for (var $104 in state) {
-                          if ({}.hasOwnProperty.call(state, $104)) {
-                              $103[$104] = state[$104];
+                      var $105 = {};
+                      for (var $106 in state) {
+                          if ({}.hasOwnProperty.call(state, $106)) {
+                              $105[$106] = state[$106];
                           };
                       };
-                      $103.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($154) {
+                      $105.videos = Data_Map_Internal.update(Data_Ord.ordInt)(function ($163) {
                           return Data_Maybe.Just.create((function (v3) {
-                              var $100 = {};
-                              for (var $101 in v3) {
-                                  if ({}.hasOwnProperty.call(v3, $101)) {
-                                      $100[$101] = v3[$101];
+                              var $102 = {};
+                              for (var $103 in v3) {
+                                  if ({}.hasOwnProperty.call(v3, $103)) {
+                                      $102[$103] = v3[$103];
                                   };
                               };
-                              $100.videoId = new Data_Either.Right(v1.value0);
-                              return $100;
-                          })($154));
+                              $102.videoId = new Data_Either.Right(v1.value0);
+                              return $102;
+                          })($163));
                       })(v.value0)(state.videos);
-                      return $103;
+                      return $105;
                   }))(function () {
                       return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Halogen_Query_HalogenM.query()({
                           reflectSymbol: function () {
@@ -14784,7 +14793,7 @@ var PS = {};
                       });
                   });
               };
-              throw new Error("Failed pattern match at YTM.App (line 328, column 5 - line 343, column 18): " + [ v1.constructor.name ]);
+              throw new Error("Failed pattern match at YTM.App (line 346, column 5 - line 361, column 18): " + [ v1.constructor.name ]);
           };
           if (v instanceof StartVideos) {
               return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(getExistingPlayerIds(dictMonadAff))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(Data_Function.flip(Halogen_Query.tell()({
@@ -14803,21 +14812,21 @@ var PS = {};
           if (v instanceof FullScreen) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Effect_Class.liftEffect(Halogen_Query_HalogenM.monadEffectHalogenM(dictMonadAff.MonadEffect0()))($foreign.requestFullscreen))(function () {
                   return Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                      var $109 = {};
-                      for (var $110 in v1) {
-                          if ({}.hasOwnProperty.call(v1, $110)) {
-                              $109[$110] = v1[$110];
+                      var $111 = {};
+                      for (var $112 in v1) {
+                          if ({}.hasOwnProperty.call(v1, $112)) {
+                              $111[$112] = v1[$112];
                           };
                       };
-                      $109.fullscreen = true;
-                      return $109;
+                      $111.fullscreen = true;
+                      return $111;
                   });
               });
           };
           if (v instanceof NoOp) {
               return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Unit.unit);
           };
-          throw new Error("Failed pattern match at YTM.App (line 255, column 16 - line 357, column 20): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.App (line 273, column 16 - line 375, column 20): " + [ v.constructor.name ]);
       };
   };
   var handleQuery = function (dictMonadAff) {
@@ -14892,7 +14901,7 @@ var PS = {};
                               });
                           });
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 397, column 3 - line 412, column 45): " + [ mbRoute.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 415, column 3 - line 430, column 45): " + [ mbRoute.constructor.name ]);
                   })())(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1));
                   });
@@ -14907,73 +14916,89 @@ var PS = {};
                       if (Data_Boolean.otherwise) {
                           return x;
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 426, column 5 - line 428, column 22): " + [ cap.constructor.name, x.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 446, column 5 - line 448, column 22): " + [ cap.constructor.name, x.constructor.name ]);
                   };
               };
               return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.gets(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
                   return v1.fullscreen;
               }))(function (isFullscreen) {
-                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(getExistingPlayerIds(dictMonadAff))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(function (ix) {
+                  var v1 = (function () {
                       if (isFullscreen) {
+                          return new Data_Tuple.Tuple(minCap(300)(v.value0), minCap(300)(v.value1));
+                      };
+                      return new Data_Tuple.Tuple(minCap(300)(v.value0 - 750 | 0), minCap(300)(v.value1 - 50 | 0));
+                  })();
+                  return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v2) {
+                      var $126 = {};
+                      for (var $127 in v2) {
+                          if ({}.hasOwnProperty.call(v2, $127)) {
+                              $126[$127] = v2[$127];
+                          };
+                      };
+                      $126.size = {
+                          width: v1.value0,
+                          height: v1.value1
+                      };
+                      return $126;
+                  }))(function () {
+                      return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(getExistingPlayerIds(dictMonadAff))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(function (ix) {
                           return Halogen_Query.tell()({
                               reflectSymbol: function () {
                                   return "embeds";
                               }
-                          })(Data_Ord.ordInt)(_embeds)(ix)(YTM_YouTubeEmbed.UpdatePlayerSize.create(minCap(300)(v.value0))(minCap(300)(v.value1)));
-                      };
-                      return Halogen_Query.tell()({
-                          reflectSymbol: function () {
-                              return "embeds";
-                          }
-                      })(Data_Ord.ordInt)(_embeds)(ix)(YTM_YouTubeEmbed.UpdatePlayerSize.create(minCap(300)(v.value0 - 750 | 0))(minCap(300)(v.value1 - 50 | 0)));
-                  })))(function () {
-                      return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value2));
+                          })(Data_Ord.ordInt)(_embeds)(ix)(YTM_YouTubeEmbed.UpdatePlayerSize.create(v1.value0)(v1.value1));
+                      })))(function () {
+                          return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value2));
+                      });
                   });
               });
           };
           if (v instanceof ExitFullscreen) {
               return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Control_Monad_State_Class.modify_(Halogen_Query_HalogenM.monadStateHalogenM)(function (v1) {
-                  var $126 = {};
-                  for (var $127 in v1) {
-                      if ({}.hasOwnProperty.call(v1, $127)) {
-                          $126[$127] = v1[$127];
+                  var $134 = {};
+                  for (var $135 in v1) {
+                      if ({}.hasOwnProperty.call(v1, $135)) {
+                          $134[$135] = v1[$135];
                       };
                   };
-                  $126.fullscreen = false;
-                  return $126;
+                  $134.fullscreen = false;
+                  return $134;
               }))(function () {
                   return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value0));
               });
           };
-          throw new Error("Failed pattern match at YTM.App (line 387, column 1 - line 391, column 54): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.App (line 405, column 1 - line 409, column 54): " + [ v.constructor.name ]);
       };
   };
   var renderVideo = function (dictMonadAff) {
-      return function (idx) {
-          return function (v) {
-              return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.ref(Data_Newtype.wrap()(Data_Show.show(Data_Show.showInt)(idx))), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("video-container")), Halogen_HTML_Properties.style("opacity: " + Data_Show.show(Data_Show.showNumber)(Data_Int.toNumber(100) / 100.0)), Halogen_HTML_Properties.id("tmp-" + Data_Show.show(Data_Show.showInt)(idx)) ])([ (function () {
-                  if (v.videoId instanceof Data_Either.Left) {
-                      return Halogen_HTML_Core.text("");
-                  };
-                  if (v.videoId instanceof Data_Either.Right) {
-                      return Halogen_HTML.slot()({
-                          reflectSymbol: function () {
-                              return "embeds";
-                          }
-                      })(Data_Ord.ordInt)(_embeds)(idx)(YTM_YouTubeEmbed.mkComponent(dictMonadAff)(idx))({
-                          videoId: v.videoId.value0,
-                          volume: (Data_Array_NonEmpty.head(v.settings)).volume,
-                          opacity: v.opacity
-                      })(HandleEmbedMessage.create(idx));
-                  };
-                  throw new Error("Failed pattern match at YTM.App (line 170, column 5 - line 179, column 34): " + [ v.videoId.constructor.name ]);
-              })() ]);
+      return function (size) {
+          return function (idx) {
+              return function (v) {
+                  return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.ref(Data_Newtype.wrap()(Data_Show.show(Data_Show.showInt)(idx))), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("video-container")), Halogen_HTML_Properties.style("opacity: " + Data_Show.show(Data_Show.showNumber)(Data_Int.toNumber(100) / 100.0)), Halogen_HTML_Properties.id("tmp-" + Data_Show.show(Data_Show.showInt)(idx)) ])([ (function () {
+                      if (v.videoId instanceof Data_Either.Left) {
+                          return Halogen_HTML_Core.text("");
+                      };
+                      if (v.videoId instanceof Data_Either.Right) {
+                          return Halogen_HTML.slot()({
+                              reflectSymbol: function () {
+                                  return "embeds";
+                              }
+                          })(Data_Ord.ordInt)(_embeds)(idx)(YTM_YouTubeEmbed.mkComponent(dictMonadAff)(idx))({
+                              videoId: v.videoId.value0,
+                              volume: (Data_Array_NonEmpty.head(v.settings)).volume,
+                              opacity: v.opacity,
+                              size: size
+                          })(HandleEmbedMessage.create(idx));
+                      };
+                      throw new Error("Failed pattern match at YTM.App (line 187, column 5 - line 197, column 34): " + [ v.videoId.constructor.name ]);
+                  })() ]);
+              };
           };
       };
   };
   var renderVideos = function (dictMonadAff) {
       return function (state) {
-          return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("videos-container") ])(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(renderVideo(dictMonadAff)))(Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray)(state.videos)));
+          return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("videos-container") ])(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(renderVideo(dictMonadAff)(state.size)))(Data_Map_Internal.toUnfoldable(Data_Unfoldable.unfoldableArray)(state.videos)));
       };
   };
   var render = function (dictMonadAff) {
