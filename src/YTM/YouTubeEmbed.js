@@ -3,14 +3,14 @@ const APIKey = 'AIzaSyAqQ0H76XHmXGYwyK8C9DILPgSbBqgPk_k';
 window.dbg = { players: [] };
 
 exports.newYouTubePlayer =
-    elementId => videoId => volume => () => {
+    elementId => videoId => volume => size => () => {
         console.log('newYouTubePlayer', elementId, videoId);
         const element = document.getElementById(elementId);
         window.dbg[elementId] = element;
 
         const player = new YT.Player(element, {
-            height: '390',
-            width: '640',
+            height: size.height,
+            width: size.width,
             videoId: videoId,
             playerVars: {
                 'playsinline': 1
@@ -32,7 +32,6 @@ exports.newYouTubePlayer =
                 }
             }
         });
-        player.setSize(1000, 700);
         player._my_videoId = videoId;
         player._my_elementId = elementId;
         window.dbg.players.push(player);

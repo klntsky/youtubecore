@@ -47,6 +47,10 @@ type State =
   { videos :: Map VideoIndex VideoState
   , lastId :: Int
   , fullscreen :: Boolean
+  , size ::
+       { width :: Int
+       , height :: Int
+       }
   }
 
 type VideoState =
@@ -110,7 +114,15 @@ initialState hash =
     Just route -> applyRoute route defaultState
   where
     mbRoute = Route.parse hash
-    defaultState = { videos: Map.empty, lastId: 0, fullscreen: false }
+    defaultState =
+      { videos: Map.empty
+      , lastId: 0
+      , fullscreen: false
+      , size:
+        { width: 1024
+        , height: 768
+        }
+      }
 
 render
   :: forall m
@@ -154,13 +166,18 @@ renderVideos
   .  MonadAff m
   => State -> H.ComponentHTML Action ChildSlots m
 renderVideos state =
-  HH.div [ HP.id "videos-container" ] $ map (uncurry renderVideo) $ Map.toUnfoldable state.videos
+  HH.div [ HP.id "videos-container" ] $
+  map (uncurry (renderVideo state.size)) $
+  Map.toUnfoldable state.videos
 
 renderVideo
   :: forall m
   .  MonadAff m
-  => Int -> VideoState -> H.ComponentHTML Action ChildSlots m
-renderVideo idx { opacity, videoId, settings } =
+  => { width :: Int, height :: Int }
+  -> Int
+  -> VideoState
+  -> H.ComponentHTML Action ChildSlots m
+renderVideo size idx { opacity, videoId, settings } =
   HH.div
   [ HP.ref (wrap $ show idx)
   , HP.class_ (wrap "video-container")
@@ -175,6 +192,7 @@ renderVideo idx { opacity, videoId, settings } =
          { videoId: validVideoId
          , volume: (NEA.head settings).volume
          , opacity
+         , size
          }
          (HandleEmbedMessage idx)
   ]
@@ -413,14 +431,16 @@ handleQuery (UpdateFromURIHash hash a) = do
   pure $ Just a
 handleQuery (UpdateWindowSize width height a) = do
   isFullscreen <- H.gets _.fullscreen
+  let
+    realWidth /\ realHeight =
+        if isFullscreen
+        then
+           minCap 300 width /\ minCap 300 height
+        else
+           minCap 300 (width - 750) /\ minCap 300 (height - 50)
+  H.modify_ _ { size = { width: realWidth, height: realHeight } }
   getExistingPlayerIds >>= traverse_ \ix -> do
-    if isFullscreen
-      then H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize
-           (minCap 300 $ width)
-           (minCap 300 $ height)
-      else H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize
-           (minCap 300 $ width - 750)
-           (minCap 300 $ height - 50)
+    H.tell _embeds ix $ YouTubeEmbed.UpdatePlayerSize realWidth realHeight
   pure $ Just a
   where
     minCap cap x

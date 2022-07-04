@@ -24,7 +24,12 @@ foreign import data YouTubePlayer :: Type
 
 type ElementId = String
 
-foreign import newYouTubePlayer :: ElementId -> VideoId -> Volume -> Effect YouTubePlayer
+foreign import newYouTubePlayer
+  :: ElementId
+  -> VideoId
+  -> Volume
+  -> { width :: Int, height :: Int }
+  -> Effect YouTubePlayer
 
 type State =
   { player :: Maybe YouTubePlayer
@@ -33,6 +38,10 @@ type State =
   , volume :: Volume
   , opacity :: Opacity
   , videoId :: VideoId
+  , size ::
+       { width :: Int
+       , height :: Int
+       }
   }
 
 foreign import loadVideoTitle_
@@ -81,7 +90,12 @@ type PlayerId = Int
 type EmbedInit =
   { videoId :: VideoId
   , volume :: Volume
-  , opacity :: Opacity }
+  , opacity :: Opacity
+  , size ::
+       { width :: Int
+       , height :: Int
+       }
+  }
 
 mkComponent
   :: forall m
@@ -156,13 +170,14 @@ updatePlayerVolume = do
     liftEffect $ setVolume player volume
 
 initialState :: PlayerId -> EmbedInit -> State
-initialState playerId { videoId, volume, opacity } =
+initialState playerId { videoId, volume, opacity, size } =
   { player: Nothing
   , bgTask: Nothing
   , volume
   , opacity
   , videoId
   , playerId
+  , size
   }
 
 render :: forall cs m. PlayerId -> State -> H.ComponentHTML Action cs m
@@ -214,8 +229,9 @@ createPlayerElement
   -> VideoId
   -> Volume
   -> H.HalogenM State Action cs Message m YouTubePlayer
-createPlayerElement playerId videoId volume =
-  liftEffect $ newYouTubePlayer (playerIdToElementId playerId) videoId volume
+createPlayerElement playerId videoId volume = do
+  size <- H.gets _.size
+  liftEffect $ newYouTubePlayer (playerIdToElementId playerId) videoId volume size
 
 playerIdToElementId :: PlayerId -> String
 playerIdToElementId playerId = "youtube-" <> show playerId
