@@ -19,7 +19,7 @@ jobs:
           npm install -g purescript@0.14.5
           npm run build
           mkdir build
-          cp index.js index.html style.css build/
+          cp index.js index.html style.css favicon.ico build/
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.3.3
