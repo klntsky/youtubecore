@@ -136,6 +136,80 @@ render state =
     [ renderMixer state
     , renderVideos state
     ]
+  , HH.div [ HP.id "description" ]
+    [ HH.h2_ [ HH.text "About" ]
+    , HH.p_
+      [ HH.text """
+        YouTubeCore is a sound mixer and a VJ tool that uses YouTube embeded players.
+        """
+      ]
+    , HH.p_
+      [ HH.text """
+        This project pushes the idea of playing multiple videos at once to the extreme.
+        """
+      ]
+    , HH.p_
+      [ HH.text """
+        I use it as a way to experiment with sound.
+        """
+      ]
+
+    , HH.h2_ [ HH.text "Getting started" ]
+    , HH.p_
+      [ HH.text """
+        To start from zero, add a YouTube video above and move VOLume slider. Your setup ("patch") will be saved in the URL, so that you can share it online. You can use an example patch
+        """
+      , HH.a [ HP.href "https://youtubecore.sigil.network/#N0Epas3_JKQ[48*95[0.26,160.27,84.32,27.33,42.35,14.37,68.42,26.44,49.48,57.49]][54*100[0.51,123.52,99.53,66.54,387.55,170.56,69.58,248.59,118.60,146.61,107.62,41.63,103.64,38.65,143.66,43.67,273.68,335.69,107.70,144.71,266.72,272.73,71.74,768.75,464.71,36.70,60.69,82.67,366.66,121.65,515.64,242.63,657.62,154.61,145.60,301.59,66.58,120.57,181.56,619.55,637.54,452.53]][50*100]*0,sJU5Mj7OXnw[58*97][50*100][50*100]*400,1IL8sVw6Scs[61*97[0.19,119.20,17.21,55.23,19.30,32.31,32.37,27.44,19.48,36.49,25.56,45.57,32.61,94.63]][64*100][50*100]*400,5Y6iQz3vuM8[91*100[0.0,146.4,26.27,25.57,12.76,28.78,19.79,25.82,14.86,28.87,23.88,12.91,5.93]][38*100[0.50,531.52,410.53,89.55,67.56,220.57,97.58,151.59,150.60,201.61,171.62,22.63,51.69,525.70,37.69,28.68,68.67,25.66,107.65,99.64,50.63,334.62,133.61,67.60,84.59,117.58,99.57,51.56,34.55,166.54,35.53,50.52,165.51,102.50,60.49,73.47,50.46,25.45,42.44,65.43,33.42,503.41,116.39,199.38,450.37]][50*100]*29,goyZbut_KFY[44*100[0.0,171.2,28.3,49.6,15.17,47.21,38.33,28.41,30.44,57.44]][50*100][50*100]*16,v1oLtgZQwKg[50*100[0.48,66.50,76.47,16.46,18.45,34.44,51.40,34.33,25.15,24.4,19.3,31.0,44.0]][49*100][50*100]*0,evH__YKvU-8[33*97[0.46,114.49,13.48,67.44,26.37,28.33,29.31,48.28,30.22,42.21,68.18,94.17,44.20,28.48,34.53,22.58,42.60,51.71,118.75,162.71,19.65,14.63,23.50,15.49,30.48,34.43,33.37,59.33,450.32]][71*100][50*100]*0,ff-5c5JnVHY[25*100][50*100][50*100]*89", HP.target "_blank" ]
+        [ HH.text "here" ]
+      , HH.text
+        """ (you will be prompted to allow media autoplay by the browser).
+        """
+      ]
+
+    , HH.p_
+      [ HH.text """
+        Some of the controls have an automation recorder button. Press "record" and move the corresponding slider freely - your movement will start repeating indefinitely after you release the slider.
+        """
+      ]
+    , HH.h2_ [ HH.text "Controls" ]
+    , HH.p_
+      [ HH.text """
+        VOL - video volume, also connected with video player opacity
+        """
+      ]
+    , HH.p_
+      [ HH.text """
+        SPD - playback speed of video volume automation. Has no effect if the automation is not set for VOL
+        """
+      ]
+    , HH.p_
+      [ HH.text """
+        MOD - playback speed of SPD automation. Has no effect is the automation is not set for SPD
+        """
+      ]
+    , HH.p_
+      [ HH.text """
+        OPC - coefficient that determines how much does current volume value influence video player opacity
+        """
+      ]
+    , HH.p_
+      [ HH.text """
+        AMP - amplitude control of the slider to the left
+        """
+      ]
+    , HH.br_
+
+    , HH.h2_ [ HH.text "Links" ]
+
+    , HH.a [ HP.href "https://t.me/youtubecore", HP.target "_blank" ]
+      [ HH.text "TELEGRAM CHANNEL with reusable example patches" ]
+    , HH.br_
+    , HH.a [ HP.href "https://github.com/klntsky/youtubecore", HP.target "_blank" ]
+      [ HH.text "SOURCE CODE" ]
+    , HH.br_
+    , HH.a [ HP.href "https://twitter.com/klntsky/", HP.target "_blank" ]
+      [ HH.text "AUTHOR'S TWITTER" ]
+    ]
   ]
 
 renderHeader :: forall m. H.ComponentHTML Action ChildSlots m
@@ -187,10 +261,11 @@ renderVideo { size, fullscreen } idx { opacity, videoId, settings } =
   [ case videoId of
        Left _ -> HH.text ""
        Right validVideoId ->
+         let thisVideo = NEA.head settings in
          HH.slot _embeds idx
          (YouTubeEmbed.mkComponent idx)
          { videoId: validVideoId
-         , volume: (NEA.head settings).volume
+         , volume: thisVideo.volume * thisVideo.amplitude / 10000
          , opacity
          , size: toVideoSize fullscreen size
          }
