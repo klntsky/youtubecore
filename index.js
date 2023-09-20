@@ -10723,9 +10723,13 @@ var PS = {};
   var Data_Maybe = $PS["Data.Maybe"];
   var Halogen_HTML_Core = $PS["Halogen.HTML.Core"];
   var element = Halogen_HTML_Core.element(Data_Maybe.Nothing.value);
+  var h2 = element("h2");
+  var h2_ = h2([  ]);
   var input = function (props) {
       return element("input")(props)([  ]);
-  };
+  };                         
+  var p = element("p");
+  var p_ = p([  ]);
   var span = element("span");
   var table = element("table");
   var table_ = table([  ]);
@@ -10734,12 +10738,19 @@ var PS = {};
   var tr = element("tr");
   var tr_ = tr([  ]);
   var div = element("div");
-  var div_ = div([  ]);  
+  var div_ = div([  ]);      
+  var br = function (props) {
+      return element("br")(props)([  ]);
+  };
+  var br_ = br([  ]);    
   var a = element("a");
   exports["a"] = a;
+  exports["br_"] = br_;
   exports["div"] = div;
   exports["div_"] = div_;
+  exports["h2_"] = h2_;
   exports["input"] = input;
+  exports["p_"] = p_;
   exports["span"] = span;
   exports["table_"] = table_;
   exports["td"] = td;
@@ -14299,6 +14310,7 @@ var PS = {};
   var Data_Array_NonEmpty_Internal = $PS["Data.Array.NonEmpty.Internal"];
   var Data_Boolean = $PS["Data.Boolean"];
   var Data_Either = $PS["Data.Either"];
+  var Data_EuclideanRing = $PS["Data.EuclideanRing"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Function = $PS["Data.Function"];
   var Data_Functor = $PS["Data.Functor"];
@@ -14469,7 +14481,7 @@ var PS = {};
                   if (Data_Boolean.otherwise) {
                       return x;
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 458, column 5 - line 460, column 22): " + [ cap.constructor.name, x.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 533, column 5 - line 535, column 22): " + [ cap.constructor.name, x.constructor.name ]);
               };
           };
           var v1 = (function () {
@@ -14574,7 +14586,7 @@ var PS = {};
                   if (Data_Boolean.otherwise) {
                       return v2.before + "\u2026";
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 267, column 7 - line 270, column 39): " + [ v2.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 342, column 7 - line 345, column 39): " + [ v2.constructor.name ]);
               })();
               return [ Halogen_HTML_Elements.tr_([ Halogen_HTML_Elements.td([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("mixer-video-input-container")) ])([ Halogen_HTML_Elements.input([ Halogen_HTML_Properties.type_(Halogen_HTML_Core.isPropInputType)(DOM_HTML_Indexed_InputType.InputText.value), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("mixer-video-input")), Halogen_HTML_Properties.placeholder("Video URL or ID"), Halogen_HTML_Properties.value((function () {
                   if (v1.videoId instanceof Data_Either.Left) {
@@ -14583,7 +14595,7 @@ var PS = {};
                   if (v1.videoId instanceof Data_Either.Right) {
                       return Data_Newtype.unwrap()(v1.videoId.value0);
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 232, column 20 - line 234, column 53): " + [ v1.videoId.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 307, column 20 - line 309, column 53): " + [ v1.videoId.constructor.name ]);
               })()), Halogen_HTML_Events.onValueChange(UpdateVideoId.create(v)) ]), Halogen_HTML_Elements.span([ Halogen_HTML_Events.onClick(function (v2) {
                   return new RemoveVideo(v);
               }), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("delete-button")) ])([ Halogen_HTML_Core.text("DELETE") ]) ]), Halogen_HTML_Elements.td([ Halogen_HTML_Properties.rowSpan(2) ])([ Halogen_HTML.slot()({
@@ -14600,7 +14612,7 @@ var PS = {};
                   if (v1.videoId instanceof Data_Either.Right) {
                       return Halogen_HTML_Elements.a([ Halogen_HTML_Properties.href("https://youtu.be/" + Data_Newtype.unwrap()(v1.videoId.value0)), Halogen_HTML_Properties.target("_blank"), Halogen_HTML_Properties.class_(Data_Newtype.wrap()("video-link")) ])([ Halogen_HTML_Core.text(shortenedTitle) ]);
                   };
-                  throw new Error("Failed pattern match at YTM.App (line 251, column 9 - line 259, column 40): " + [ v1.videoId.constructor.name ]);
+                  throw new Error("Failed pattern match at YTM.App (line 326, column 9 - line 334, column 40): " + [ v1.videoId.constructor.name ]);
               })() ]) ]), Halogen_HTML_Elements.tr([ Halogen_HTML_Properties.class_(Data_Newtype.wrap()("mixer-entry-interval")) ])([ Halogen_HTML_Elements.td([ Halogen_HTML_Properties.colSpan(2) ])([  ]) ]) ];
           };
       };
@@ -14632,18 +14644,19 @@ var PS = {};
                           return Halogen_HTML_Core.text("");
                       };
                       if (v1.videoId instanceof Data_Either.Right) {
+                          var thisVideo = Data_Array_NonEmpty.head(v1.settings);
                           return Halogen_HTML.slot()({
                               reflectSymbol: function () {
                                   return "embeds";
                               }
                           })(Data_Ord.ordInt)(_embeds)(idx)(YTM_YouTubeEmbed.mkComponent(dictMonadAff)(idx))({
                               videoId: v1.videoId.value0,
-                              volume: (Data_Array_NonEmpty.head(v1.settings)).volume,
+                              volume: Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(thisVideo.volume * thisVideo.amplitude | 0)(10000),
                               opacity: v1.opacity,
                               size: toVideoSize(v.fullscreen)(v.size)
                           })(HandleEmbedMessage.create(idx));
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 187, column 5 - line 197, column 34): " + [ v1.videoId.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 261, column 5 - line 272, column 34): " + [ v1.videoId.constructor.name ]);
                   })() ]);
               };
           };
@@ -14656,7 +14669,7 @@ var PS = {};
   };
   var render = function (dictMonadAff) {
       return function (state) {
-          return Halogen_HTML_Elements.div_([ renderHeader, Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("flex-container") ])([ renderMixer(dictMonadAff)(state), renderVideos(dictMonadAff)(state) ]) ]);
+          return Halogen_HTML_Elements.div_([ renderHeader, Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("flex-container") ])([ renderMixer(dictMonadAff)(state), renderVideos(dictMonadAff)(state) ]), Halogen_HTML_Elements.div([ Halogen_HTML_Properties.id("description") ])([ Halogen_HTML_Elements.h2_([ Halogen_HTML_Core.text("About") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        YouTubeCore is a sound mixer and a VJ tool that uses YouTube embeded players.\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        This project pushes the idea of playing multiple videos at once to the extreme.\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        I use it as a way to experiment with sound.\x0a        ") ]), Halogen_HTML_Elements.h2_([ Halogen_HTML_Core.text("Getting started") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        To start from zero, add a YouTube video above and move VOLume slider. Your setup (\"patch\") will be saved in the URL, so that you can share it online. You can use an example patch\x0a        "), Halogen_HTML_Elements.a([ Halogen_HTML_Properties.href("https://youtubecore.sigil.network/#N0Epas3_JKQ[48*95[0.26,160.27,84.32,27.33,42.35,14.37,68.42,26.44,49.48,57.49]][54*100[0.51,123.52,99.53,66.54,387.55,170.56,69.58,248.59,118.60,146.61,107.62,41.63,103.64,38.65,143.66,43.67,273.68,335.69,107.70,144.71,266.72,272.73,71.74,768.75,464.71,36.70,60.69,82.67,366.66,121.65,515.64,242.63,657.62,154.61,145.60,301.59,66.58,120.57,181.56,619.55,637.54,452.53]][50*100]*0,sJU5Mj7OXnw[58*97][50*100][50*100]*400,1IL8sVw6Scs[61*97[0.19,119.20,17.21,55.23,19.30,32.31,32.37,27.44,19.48,36.49,25.56,45.57,32.61,94.63]][64*100][50*100]*400,5Y6iQz3vuM8[91*100[0.0,146.4,26.27,25.57,12.76,28.78,19.79,25.82,14.86,28.87,23.88,12.91,5.93]][38*100[0.50,531.52,410.53,89.55,67.56,220.57,97.58,151.59,150.60,201.61,171.62,22.63,51.69,525.70,37.69,28.68,68.67,25.66,107.65,99.64,50.63,334.62,133.61,67.60,84.59,117.58,99.57,51.56,34.55,166.54,35.53,50.52,165.51,102.50,60.49,73.47,50.46,25.45,42.44,65.43,33.42,503.41,116.39,199.38,450.37]][50*100]*29,goyZbut_KFY[44*100[0.0,171.2,28.3,49.6,15.17,47.21,38.33,28.41,30.44,57.44]][50*100][50*100]*16,v1oLtgZQwKg[50*100[0.48,66.50,76.47,16.46,18.45,34.44,51.40,34.33,25.15,24.4,19.3,31.0,44.0]][49*100][50*100]*0,evH__YKvU-8[33*97[0.46,114.49,13.48,67.44,26.37,28.33,29.31,48.28,30.22,42.21,68.18,94.17,44.20,28.48,34.53,22.58,42.60,51.71,118.75,162.71,19.65,14.63,23.50,15.49,30.48,34.43,33.37,59.33,450.32]][71*100][50*100]*0,ff-5c5JnVHY[25*100][50*100][50*100]*89"), Halogen_HTML_Properties.target("_blank") ])([ Halogen_HTML_Core.text("here") ]), Halogen_HTML_Core.text(" (you will be prompted to allow media autoplay by the browser).\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        Some of the controls have an automation recorder button. Press \"record\" and move the corresponding slider freely - your movement will start repeating indefinitely after you release the slider.\x0a        ") ]), Halogen_HTML_Elements.h2_([ Halogen_HTML_Core.text("Controls") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        VOL - video volume, also connected with video player opacity\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        SPD - playback speed of video volume automation. Has no effect if the automation is not set for VOL\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        MOD - playback speed of SPD automation. Has no effect is the automation is not set for SPD\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        OPC - coefficient that determines how much does current volume value influence video player opacity\x0a        ") ]), Halogen_HTML_Elements.p_([ Halogen_HTML_Core.text("\x0a        AMP - amplitude control of the slider to the left\x0a        ") ]), Halogen_HTML_Elements.br_, Halogen_HTML_Elements.h2_([ Halogen_HTML_Core.text("Links") ]), Halogen_HTML_Elements.a([ Halogen_HTML_Properties.href("https://t.me/youtubecore"), Halogen_HTML_Properties.target("_blank") ])([ Halogen_HTML_Core.text("TELEGRAM CHANNEL with reusable example patches") ]), Halogen_HTML_Elements.br_, Halogen_HTML_Elements.a([ Halogen_HTML_Properties.href("https://github.com/klntsky/youtubecore"), Halogen_HTML_Properties.target("_blank") ])([ Halogen_HTML_Core.text("SOURCE CODE") ]), Halogen_HTML_Elements.br_, Halogen_HTML_Elements.a([ Halogen_HTML_Properties.href("https://twitter.com/klntsky/"), Halogen_HTML_Properties.target("_blank") ])([ Halogen_HTML_Core.text("AUTHOR'S TWITTER") ]) ]) ]);
       };
   };
   var updateWindowSize = function (dictMonadAff) {
@@ -14796,7 +14809,7 @@ var PS = {};
                       if (v.value1.value0 instanceof YTM_RecordableSlider.FromPlayback) {
                           return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Unit.unit);
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 327, column 9 - line 334, column 22): " + [ v.value1.value0.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 402, column 9 - line 409, column 22): " + [ v.value1.value0.constructor.name ]);
                   });
               };
               if (v.value1 instanceof YTM_VolumeControl.UpdateRecordingStates) {
@@ -14831,7 +14844,7 @@ var PS = {};
                       }
                   })(Data_Ord.ordInt)(_embeds)(v.value0)(Halogen_Query.mkTell(YTM_YouTubeEmbed.UpdateOpacity.create(v.value1.value0))));
               };
-              throw new Error("Failed pattern match at YTM.App (line 322, column 5 - line 343, column 90): " + [ v.value1.constructor.name ]);
+              throw new Error("Failed pattern match at YTM.App (line 397, column 5 - line 418, column 90): " + [ v.value1.constructor.name ]);
           };
           if (v instanceof UpdateVideoId) {
               var v1 = YTM_VideoId.parseVideoId(v.value1);
@@ -14889,7 +14902,7 @@ var PS = {};
                       });
                   });
               };
-              throw new Error("Failed pattern match at YTM.App (line 346, column 5 - line 361, column 18): " + [ v1.constructor.name ]);
+              throw new Error("Failed pattern match at YTM.App (line 421, column 5 - line 436, column 18): " + [ v1.constructor.name ]);
           };
           if (v instanceof StartVideos) {
               return Control_Bind.bind(Halogen_Query_HalogenM.bindHalogenM)(getExistingPlayerIds(dictMonadAff))(Data_Foldable.traverse_(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Foldable.foldableArray)(Data_Function.flip(Halogen_Query.tell()({
@@ -14926,7 +14939,7 @@ var PS = {};
           if (v instanceof NoOp) {
               return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(Data_Unit.unit);
           };
-          throw new Error("Failed pattern match at YTM.App (line 273, column 16 - line 376, column 20): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.App (line 348, column 16 - line 451, column 20): " + [ v.constructor.name ]);
       };
   };
   var handleQuery = function (dictMonadAff) {
@@ -15001,7 +15014,7 @@ var PS = {};
                               });
                           });
                       };
-                      throw new Error("Failed pattern match at YTM.App (line 416, column 3 - line 431, column 45): " + [ mbRoute.constructor.name ]);
+                      throw new Error("Failed pattern match at YTM.App (line 491, column 3 - line 506, column 45): " + [ mbRoute.constructor.name ]);
                   })())(function () {
                       return Control_Applicative.pure(Halogen_Query_HalogenM.applicativeHalogenM)(new Data_Maybe.Just(v.value1));
                   });
@@ -15030,7 +15043,7 @@ var PS = {};
                   });
               });
           };
-          throw new Error("Failed pattern match at YTM.App (line 406, column 1 - line 410, column 54): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at YTM.App (line 481, column 1 - line 485, column 54): " + [ v.constructor.name ]);
       };
   };
   var component = function (dictMonadAff) {
