@@ -18,10 +18,12 @@
 #description {
     margin: 20px;
     font-family: Helvetica;
+    max-width: 750px;
 }
 
 h2 {
     margin-top: 20px;
+    margin-bottom: 10px;
 }
 
 #header-title {
